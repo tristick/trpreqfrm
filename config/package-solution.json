@@ -1,0 +1,40 @@
+{
+  "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
+  "solution": {
+    "name": "trpreqfrm-client-side-solution",
+    "id": "4608043a-153b-4fe8-a469-e4a06c60a84a",
+    "version": "1.0.0.0",
+    "includeClientSideAssets": true,
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "developer": {
+      "name": "",
+      "websiteUrl": "",
+      "privacyUrl": "",
+      "termsOfUseUrl": "",
+      "mpnId": "Undefined-1.16.1"
+    },
+    "metadata": {
+      "shortDescription": {
+        "default": "trpreqfrm description"
+      },
+      "longDescription": {
+        "default": "trpreqfrm description"
+      },
+      "screenshotPaths": [],
+      "videoUrl": "",
+      "categories": []
+    },
+    "features": [
+      {
+        "title": "trpreqfrm Feature",
+        "description": "The feature that activates elements of the trpreqfrm solution.",
+        "id": "625e7bca-5aa4-41e5-8e42-80372c8fd1e4",
+        "version": "1.0.0.0"
+      }
+    ]
+  },
+  "paths": {
+    "zippedPackage": "solution/trpreqfrm.sppkg"
+  }
+}

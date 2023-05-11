@@ -1,0 +1,21 @@
+{
+  "@microsoft/generator-sharepoint": {
+    "plusBeta": false,
+    "isCreatingSolution": true,
+    "nodeVersion": "16.19.1",
+    "sdksVersions": {
+      "@microsoft/microsoft-graph-client": "3.0.2",
+      "@microsoft/teams-js": "2.4.1"
+    },
+    "version": "1.16.1",
+    "libraryName": "trpreqfrm",
+    "libraryId": "4608043a-153b-4fe8-a469-e4a06c60a84a",
+    "environment": "spo",
+    "packageManager": "npm",
+    "solutionName": "trpreqfrm",
+    "solutionShortDescription": "trpreqfrm description",
+    "skipFeatureDeployment": true,
+    "isDomainIsolated": false,
+    "componentType": "webpart"
+  }
+}
