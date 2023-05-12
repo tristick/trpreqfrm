@@ -6,5 +6,6 @@ export interface ITrpreqfrmProps {
   environmentMessage: string;
   hasTeamsContext: boolean;
   userDisplayName: string;
+ 
   context: WebPartContext
 }

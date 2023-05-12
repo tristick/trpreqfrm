@@ -31,6 +31,7 @@ export default class TrpreqfrmWebPart extends BaseClientSideWebPart<ITrpreqfrmWe
         environmentMessage: this._environmentMessage,
         hasTeamsContext: !!this.context.sdks.microsoftTeams,
         userDisplayName: this.context.pageContext.user.email,
+       
         context: this.context 
       }
     );
