@@ -13,6 +13,11 @@ export interface ITrpreqfrmState {
     freight:string
     othercon:string|any
     applaw:string|any
+    showProgress:boolean,
+    progressLabel: string,
+    progressDescription: string,
+    progressPercent: any
+    
    
     
 } 

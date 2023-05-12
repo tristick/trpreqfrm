@@ -3,7 +3,7 @@ import * as React from 'react';
 import { ITrpreqfrmProps } from './ITrpreqfrmProps';
 import { ITrpreqfrmState } from './ITrpreqfrmState';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker"; 
-import { Dropdown, IDropdownOption, PrimaryButton, TextField } from '@fluentui/react';
+import { Dropdown, IDropdownOption, PrimaryButton, ProgressIndicator, TextField } from '@fluentui/react';
 import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
 import { getSP } from '../../../pnpjsconfig';
 import { SPFI} from '@pnp/sp';
@@ -49,8 +49,11 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       portpairs:"",
       freight:"",
       othercon:"",
-      applaw:""
-      
+      applaw:"",
+     showProgress:false,
+      progressLabel: "File upload progress",
+      progressDescription: "",
+      progressPercent: 0
      
     }; 
     
@@ -146,6 +149,36 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     //this.setState({customerlist:strcountry})
     console.log(strcountry)
   }
+
+  private uploadFile = () => {
+    const _sp :SPFI = getSP(this.props.context ) ;
+    let input = document.getElementById("fileInput") as HTMLInputElement;
+    let file = input.files[0];
+    let chunkSize = 40960; // Default chunksize is 10485760. This number was chosen to demonstrate file upload progress
+    this.setState({ showProgress: true });
+    _sp.web.getFolderByServerRelativePath("Shared Documents").files.addChunked(file.name, file,
+        data => {
+          let percent = (data.blockNumber / data.totalBlocks);
+          this.setState({
+            progressPercent: percent,
+            progressDescription: `${Math.round(percent * 100)} %`
+          });
+        }, true,
+        chunkSize)
+      .then(r => {
+        console.log("File uploaded successfully");
+        this.setState({
+          progressPercent: 1,
+          progressDescription: `File upload complete`
+        });
+      })
+      .catch(e => {
+        console.log("Error while uploading file");
+        console.log(e);
+      });
+
+  }
+
    
     private _createItem  =async (props:ITrpreqfrmProps):Promise<void>=>{
     
@@ -246,11 +279,18 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       <TextField label="Freight Payment" value={this.state.freight} onChange={this._onfreight}/>
       <RichText label="Other Conditions" value={this.state.othercon}  onChange={(text)=>this.ontherconTextChange(text)}/> 
       <RichText label="Applicable Law" value={this.state.applaw}  onChange={(text)=>this.onapplawTextChange(text)}/> <br/>
-      <PrimaryButton onClick={() => this._createItem(this.props)} text="Save1" />
+      <PrimaryButton onClick={() => this._createItem(this.props)} text="Save" />
       </div>
       <div>
       <h3>Additional Information</h3>
       <RichText label="Background"/>
+      <input type="file" id="fileInput" /><br />
+        <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br />
+        <ProgressIndicator
+          label={this.state.progressLabel}
+          description={this.state.progressDescription}
+          percentComplete={this.state.progressPercent}
+          barHeight={5} />
       <UploadFiles
           pageSize={10}
           context={this.props.context as any}
