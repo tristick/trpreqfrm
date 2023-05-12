@@ -43,7 +43,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       customerlist:"str",
       startDate:new Date(),
       endDate:new Date(),
-      dateduration:0,
+      dateduration:"zero",
       cargodescription:"",
       contractval:"",
       portpairs:"",
@@ -82,7 +82,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     
     const startDate = moment(stdate);
     const timeEnd = moment(this.state.endDate);
-    const diff = timeEnd.diff(startDate,'days');
+    const diff = timeEnd.diff(startDate,'days').toString();
     //const diffDuration = moment.duration(diff)
     console.log('diffdur', diff)
     this.setState({ dateduration: diff }); 
@@ -92,7 +92,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     this.setState({ endDate: eddate });  
     const startDate = moment(this.state.startDate);
     const timeEnd = moment(eddate);
-    const diff = timeEnd.diff(startDate,'days')+1;
+    const diff = (timeEnd.diff(startDate,'days')+1).toString();
     //const diffDuration = moment.duration(diff);
     console.log('diffdur', diff)
     this.setState({ dateduration: diff }); 
@@ -246,7 +246,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       <TextField label="Freight Payment" value={this.state.freight} onChange={this._onfreight}/>
       <RichText label="Other Conditions" value={this.state.othercon}  onChange={(text)=>this.ontherconTextChange(text)}/> 
       <RichText label="Applicable Law" value={this.state.applaw}  onChange={(text)=>this.onapplawTextChange(text)}/> <br/>
-      <PrimaryButton onClick={() => this._createItem(this.props)} text="Save" />
+      <PrimaryButton onClick={() => this._createItem(this.props)} text="Save1" />
       </div>
       <div>
       <h3>Additional Information</h3>
