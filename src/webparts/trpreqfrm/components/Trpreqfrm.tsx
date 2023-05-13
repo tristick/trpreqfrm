@@ -3,7 +3,7 @@ import * as React from 'react';
 import { ITrpreqfrmProps } from './ITrpreqfrmProps';
 import { ITrpreqfrmState } from './ITrpreqfrmState';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker"; 
-import { Dropdown, IDropdownOption, PrimaryButton, ProgressIndicator, TextField } from '@fluentui/react';
+
 import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
 import { getSP } from '../../../pnpjsconfig';
 import { SPFI} from '@pnp/sp';
@@ -15,18 +15,22 @@ import {
   UploadFiles,
 } from '@pnp/spfx-controls-react/lib/UploadFiles';
 import { ListItemPicker } from '@pnp/spfx-controls-react';
-import { Stack } from 'office-ui-fabric-react';
+import { ProgressIndicator, Stack } from 'office-ui-fabric-react';
+import "@pnp/sp/site-users/web";
+import "@pnp/sp/items";
+import { TextField } from '@fluentui/react/lib/TextField';
+import { PrimaryButton } from '@fluentui/react';
 
 
 
-const options: IDropdownOption[] = [
+/* const options: IDropdownOption[] = [
   
   { key: 'apple', text: 'Apple' },
   { key: 'banana', text: 'Banana' },
  
   { key: 'grape', text: 'Grape' },
  
-];
+]; */
 
 export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqfrmState> {
  
@@ -38,14 +42,15 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     this.state = {  
       title: 'Name',  
       users: [], 
+      partyusers: [],
       ApplicantId:0,
       ValueDropdown:"",
-      customerlist:"str",
+      customerlist:"",
       startDate:new Date(),
       endDate:new Date(),
-      dateduration:"zero",
+      dateduration:"0 Days",
       cargodescription:"",
-      contractval:"",
+      contractval:0,
       portpairs:"",
       freight:"",
       othercon:"",
@@ -53,13 +58,31 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
      showProgress:false,
       progressLabel: "File upload progress",
       progressDescription: "",
-      progressPercent: 0
+      progressPercent: 0,
+      voyage:"",
+      background:"",
+      addothers:"",
+      InterestedPartiesId:0
      
     }; 
     
   }
+
+  public componentDidMount()
+{
+  
+  let email=this.props.userDisplayName;
+  const _sp :SPFI = getSP(this.props.context ) ;
+(_sp.web.siteUsers.getByEmail(email)()).then(user=> {this.setState({ApplicantId:user.Id})});
+ 
+
+const items =(_sp.web.lists.getByTitle("Transport Contract Request").items.select("ID").top(1).orderBy("ID", false)()).then((res)=>{console.log(res)})
+
+
+console.log(items);
+}
   public _getPeoplePickerItems=(items: any[]) =>{  
-  console.log("m here")
+  
   let userid =items[0].id
     this.setState({ ApplicantId: userid });
     console.log('Items new:', userid );
@@ -76,8 +99,62 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     console.log('users:',selectedUsers)  */
     
   } 
-  public onDropdownChange = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption): void => {
+  public _getPartiesPeoplePickerItems=(items: any[]) =>{  
+   console.log(items)
+    let userid =items[0].id
+      this.setState({ InterestedPartiesId: userid });
+      console.log('Items new:', userid ); 
+      /* let getSelectedUsers = [];  
+      for (let item in items) {  
+        getSelectedUsers.push(items[item].id);  
+      }  
+      this.setState({ users: getSelectedUsers });  */
+     /* let selectedUsers: any[] = [];
+      items.map((item) => {
+        selectedUsers.push(item.id);
+      });
+       this.setState({users: selectedUsers});
+      console.log('users:',selectedUsers)  */
+      
+    } 
+ /*  public onDropdownChange = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption): void => {
     this.setState({ ValueDropdown: item.key as string});
+  } */
+  private _oncustomerSelectedItem=(data: { key: string; name: string }[])=> {
+    
+    if(data.length>0){
+    this.setState({customerlist:data[0].name as string})
+    }else{
+      this.setState({customerlist:"No Country Selected"})
+    }
+    console.log("mydata",data);
+    /* let getCountry = [];  
+
+    for (let item in data) {
+      getCountry.push(data[item].name); 
+    }
+    let strcountry:string = getCountry.toString();
+    this.setState({customerlist:strcountry})
+    console.log(strcountry) */
+  }
+
+
+  private _onofficeSelectedItem=(data: { key: string; name: string }[])=> {
+    
+    if(data.length>0){
+    this.setState({ValueDropdown:data[0].name as string})
+    }else{
+      this.setState({ValueDropdown:"No Office Selected"})
+    }
+    console.log("mydata",data);
+    /* let getCountry = [];  
+
+    for (let item in data) {
+      getCountry.push(data[item].name); 
+    }
+    let strcountry:string = getCountry.toString();
+    this.setState({customerlist:strcountry})
+    console.log(strcountry) */
   }
   private _onchangedStartDate=(stdate: any): void =>{  
     this.setState({ startDate: stdate }); 
@@ -129,6 +206,24 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     return newText;
  
   }
+  private onBackgroundTextChange = (newText: string) => {
+    this.setState({background:newText});
+   
+    return newText;
+ 
+  }
+  private onvoyageTextChange = (newText: string) => {
+    this.setState({voyage:newText});
+   
+    return newText;
+ 
+  }
+  private onaddothersTextChange = (newText: string) => {
+    this.setState({addothers:newText});
+   
+    return newText;
+ 
+  }
   private _onccontractval=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
     this.setState({contractval:newText})
  }
@@ -137,18 +232,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
   this.setState({freight:newText})
 }
 
-  private _oncustomerSelectedItem=(data: { key: string; name: string }[])=> {
-    console.log(data)
-   
-    let getCountry = [];  
-
-    for (let item in data) {
-      getCountry.push(data[item].name); 
-    }
-    let strcountry:string = getCountry.toString();
-    //this.setState({customerlist:strcountry})
-    console.log(strcountry)
-  }
+  
 
   private uploadFile = () => {
     const _sp :SPFI = getSP(this.props.context ) ;
@@ -189,17 +273,21 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
         
         Title: this.props.userDisplayName,  
         ApplicantId: this.state.ApplicantId,
-        RequestngOffice:this.state.ValueDropdown,
+        RequestingOffice:this.state.ValueDropdown,
         Customer:this.state.customerlist,
-        ContractPeriodFrom:this.state.startDate,
-        ContractPeriodTo:this.state.endDate,
+        ContractPeriodStart:this.state.startDate,
+        ContractPeriodEnd:this.state.endDate,
         ContractDuration:this.state.dateduration,
         CargoDescription:this.state.cargodescription,
         ContractVolumePerYear:this.state.contractval,
         PortPairsEstVolFreightRate:this.state.portpairs,
         FreightPayment:this.state.freight,
         OtherConditions:this.state.othercon,
-        ApplicableLaw:this.state.applaw
+        ApplicableLaw:this.state.applaw,
+        VoyagePLContribution:this.state.voyage,
+        Background:this.state.background,
+        Others:this.state.addothers,
+        InterestedPartiesId:this.state.InterestedPartiesId
       });  
       console.log('cargo added',this.state.cargodescription); 
       console.log('Item added',iar); 
@@ -236,24 +324,36 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
             principalTypes={[PrincipalType.User]}
             resolveDelay={1000}
     />
-      <ListItemPicker listId='e530e316-4ff9-428c-ab1e-5c1b38154ddd'
+      <ListItemPicker listId='08e832c7-921f-4e0c-a57a-1377f87cc596'
        context={this.props.context as any}
           columnInternalName='Title'
           keyColumnInternalName='Id'
-          placeholder="Select your customer(s)"
+          placeholder="Select your customer"
           substringSearch={true}
           label="Customer"
           orderBy={"Id desc"}
-          itemLimit={10}
+          itemLimit={1}
           enableDefaultSuggestions={true}
           onSelectedItem={this._oncustomerSelectedItem}
+          noResultsFoundText="No Country Found"
+          defaultSelectedItems = {[]}
                      />
-    <Dropdown
-        placeholder="Select"
-        label="Requesting Office"
-        options={options}
-        onChange={this.onDropdownChange}
-      />
+    
+    <ListItemPicker listId='e530e316-4ff9-428c-ab1e-5c1b38154ddd'
+       context={this.props.context as any}
+          columnInternalName='Title'
+          keyColumnInternalName='Id'
+          placeholder="Select"
+          substringSearch={true}
+          label="Requesting Office"
+          orderBy={"Id desc"}
+          itemLimit={1}
+          enableDefaultSuggestions={true}
+          onSelectedItem={this._onofficeSelectedItem}
+          noResultsFoundText="No office Found"
+          defaultSelectedItems = {[]}
+                     />
+   
       <Stack horizontal>
       <DateTimePicker label="From"
             dateConvention={DateConvention.Date}
@@ -279,11 +379,11 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       <TextField label="Freight Payment" value={this.state.freight} onChange={this._onfreight}/>
       <RichText label="Other Conditions" value={this.state.othercon}  onChange={(text)=>this.ontherconTextChange(text)}/> 
       <RichText label="Applicable Law" value={this.state.applaw}  onChange={(text)=>this.onapplawTextChange(text)}/> <br/>
-      <PrimaryButton onClick={() => this._createItem(this.props)} text="Save" />
+      <PrimaryButton text="Show Additional Information" />
       </div>
       <div>
       <h3>Additional Information</h3>
-      <RichText label="Background"/>
+      <RichText label="Background" value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)}/>
       <input type="file" id="fileInput" /><br />
         <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br />
         <ProgressIndicator
@@ -307,7 +407,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
           
         />
 
-      <RichText label="Voyage P/L Contribution" /> 
+      <RichText label="Voyage P/L Contribution" value={this.state.voyage}  onChange={(text)=>this.onvoyageTextChange(text)}/> 
         <UploadFiles
           pageSize={5}
           context={this.props.context as any}
@@ -323,7 +423,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
           }}
           
         />
-    <RichText label="Others"/> 
+    <RichText label="Others" value={this.state.addothers}  onChange={(text)=>this.onaddothersTextChange(text)}/> 
     <UploadFiles
           pageSize={5}
           context={this.props.context as any}
@@ -343,18 +443,20 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
         context={this.props.context as any}
         titleText="Interested Parties"
         personSelectionLimit={5}
-        //groupName={""} // Leave this blank in case you want to filter from all users
-        showtooltip={true}
-        required={true}
+        groupName={""} 
+        showtooltip={false}
+        ensureUser={true}
+        required={false}
         disabled={false}
-        //onChange={_getPeoplePickerItems}
+        onChange={this._getPartiesPeoplePickerItems}
         showHiddenInUI={false}
         principalTypes={[PrincipalType.User]}
         resolveDelay={1000} />                  
     <br/>
+    
     <Stack horizontal horizontalAlign='end'>     
-    <PrimaryButton text="Submit" />
-    <PrimaryButton text="Cancel" />
+    <PrimaryButton text="Submit" onClick={() => this._createItem(this.props)} />
+   
     </Stack> 
         </div>
       </section>
