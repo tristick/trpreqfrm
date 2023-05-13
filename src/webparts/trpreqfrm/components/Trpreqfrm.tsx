@@ -11,15 +11,14 @@ import "@pnp/sp/files";
 import "@pnp/sp/folders";
 import { DateConvention, DateTimePicker } from '@pnp/spfx-controls-react/lib/DateTimePicker';
 import * as moment from 'moment';
-import {
-  UploadFiles,
-} from '@pnp/spfx-controls-react/lib/UploadFiles';
+
 import { ListItemPicker } from '@pnp/spfx-controls-react';
-import { ProgressIndicator, Stack } from 'office-ui-fabric-react';
+//import { ProgressIndicator, Stack } from 'office-ui-fabric-react';
 import "@pnp/sp/site-users/web";
 import "@pnp/sp/items";
 import { TextField } from '@fluentui/react/lib/TextField';
 import { PrimaryButton } from '@fluentui/react';
+import { Stack } from 'office-ui-fabric-react';
 
 
 
@@ -234,9 +233,10 @@ console.log(items);
 
   
 
-  private uploadFile = () => {
-    const _sp :SPFI = getSP(this.props.context ) ;
-    let input = document.getElementById("fileInput") as HTMLInputElement;
+  /*private uploadFile = () => {
+    console.log("files")
+      const _sp :SPFI = getSP(this.props.context ) ;
+   let input = document.getElementById("fileInput") as HTMLInputElement;
     let file = input.files[0];
     let chunkSize = 40960; // Default chunksize is 10485760. This number was chosen to demonstrate file upload progress
     this.setState({ showProgress: true });
@@ -260,8 +260,8 @@ console.log(items);
         console.log("Error while uploading file");
         console.log(e);
       });
-
-  }
+ 
+  }*/
 
    
     private _createItem  =async (props:ITrpreqfrmProps):Promise<void>=>{
@@ -292,7 +292,33 @@ console.log(items);
       console.log('cargo added',this.state.cargodescription); 
       console.log('Item added',iar); 
    
-    
+      let input = document.getElementById("fileInput") as HTMLInputElement;
+      console.log(input.files)
+      let file = input.files[0];
+      let files = input.files;
+    console.log(files.item)
+      let chunkSize = 40960; // Default chunksize is 10485760. This number was chosen to demonstrate file upload progress
+      this.setState({ showProgress: true });
+      _sp.web.getFolderByServerRelativePath("Shared Documents").files.addChunked(file.name, file,
+          data => {
+            let percent = (data.blockNumber / data.totalBlocks);
+            this.setState({
+              progressPercent: percent,
+              progressDescription: `${Math.round(percent * 100)} %`
+            });
+          }, true,
+          chunkSize)
+        .then(r => {
+          console.log("File uploaded successfully");
+          this.setState({
+            progressPercent: 1,
+            progressDescription: `File upload complete`
+          });
+        })
+        .catch(e => {
+          console.log("Error while uploading file");
+          console.log(e);
+        });
     // catch (error) { 
     //   console.log("creation failed with error") 
        
@@ -384,47 +410,25 @@ console.log(items);
       <div>
       <h3>Additional Information</h3>
       <RichText label="Background" value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)}/>
-      <input type="file" id="fileInput" /><br />
-        <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br />
+      <br />
+      <input type="file" id="fileInput" name='files[]' multiple/><br />
+        {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br />
         <ProgressIndicator
           label={this.state.progressLabel}
           description={this.state.progressDescription}
           percentComplete={this.state.progressPercent}
-          barHeight={5} />
-      <UploadFiles
-          pageSize={10}
-          context={this.props.context as any}
-          title="Upload Files"
-          onUploadFiles={(files) => {
-            console.log("files", files);
-            const _sp :SPFI = getSP(this.props.context ) ;
-            files.forEach(function (value) {
-            //let file = files[0];
-        _sp.web.getFolderByServerRelativePath("Shared Documents").files.addChunked(value.name,value as Blob , data => {
-              console.log(`progress`);
-              }, true);})
-          }}
-          
-        />
+          barHeight={5} /> */}
+    
 
       <RichText label="Voyage P/L Contribution" value={this.state.voyage}  onChange={(text)=>this.onvoyageTextChange(text)}/> 
-        <UploadFiles
-          pageSize={5}
-          context={this.props.context as any}
-          title="Upload Files"
-          onUploadFiles={(files) => {
-            console.log("files", files);
-            const _sp :SPFI = getSP(this.props.context ) ;
-            files.forEach(function (value) {
-            //let file = files[0];
-        _sp.web.getFolderByServerRelativePath("Shared Documents").files.addChunked(value.name,value as Blob , data => {
-              console.log(`progress`);
-              }, true);})
-          }}
-          
-        />
+      <br />
+      {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br /> */}
+      <input type="file" id="fileInput" multiple/><br />
     <RichText label="Others" value={this.state.addothers}  onChange={(text)=>this.onaddothersTextChange(text)}/> 
-    <UploadFiles
+    <br />
+    <input type="file" id="fileInput" multiple/><br />
+    {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br /> */}
+   {/*  <UploadFiles
           pageSize={5}
           context={this.props.context as any}
           title="Upload Files"
@@ -438,7 +442,8 @@ console.log(items);
               }, true);})
           }}
           
-        />
+        /> */}
+      
     <PeoplePicker
         context={this.props.context as any}
         titleText="Interested Parties"
