@@ -1,5 +1,5 @@
 import * as React from 'react';
-
+import './Trpreqfrm.module.scss'
 import { ITrpreqfrmProps } from './ITrpreqfrmProps';
 import { ITrpreqfrmState } from './ITrpreqfrmState';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker"; 
@@ -20,6 +20,7 @@ import { TextField } from '@fluentui/react/lib/TextField';
 import { PrimaryButton } from '@fluentui/react';
 import { MessageBar, MessageBarType, Stack } from 'office-ui-fabric-react';
 import { ListItemPicker} from '@pnp/spfx-controls-react';
+import * as ReactDOM from 'react-dom';
 
 
 
@@ -33,14 +34,17 @@ import { ListItemPicker} from '@pnp/spfx-controls-react';
 ]; */
 
 export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqfrmState> {
- 
 
+  private dt: DataTransfer; 
+ 
+  filesNamesRef: React.RefObject<HTMLSpanElement>;
 
   constructor(props: ITrpreqfrmProps, state: ITrpreqfrmState) {  
     super(props);  
-    
+    this.dt = new DataTransfer();
+    this.filesNamesRef = React.createRef();
     this.state = {  
-      title: 'Name',  
+      title: "",  
       users: [], 
       partyusers: [],
       ApplicantId:0,
@@ -65,7 +69,8 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       addothers:"",
       InterestedPartiesId:0,
       isSuccess: false,
-      
+      files: []
+     
       
      
      
@@ -285,6 +290,55 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
  
   }*/
   
+  handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //const files = Array.prototype.slice.call(e.target.files || []);
+    //console.log(files);
+    const filesNames = this.filesNamesRef.current;
+  //const filesNames = document.querySelector<HTMLSpanElement>('#filesList > #files-names');
+   // console.log(files.length);
+    for (let i = 0; i < e.target.files.length; i++) {
+      let fileBloc = (
+        <span key={i} className="file-block">
+          <span className="file-delete">
+            <span>x Remove </span>
+          </span>
+          <span className="name">{e.target.files.item(i).name}</span><br/>
+        </span>
+      );
+      //const fileBlocNode = fileBloc as unknown as Node; // convert to Node
+      //console.log(fileBlocNode);
+      if (filesNames) {
+        const fileBlocContainer = document.createElement('div');
+ReactDOM.render(fileBloc, fileBlocContainer);
+filesNames?.appendChild(fileBlocContainer.firstChild);
+      //filesNames?.appendChild(fileBloc);
+      }
+    }
+  
+    for (let file of e.target.files as any) {
+      this.dt.items.add(file);
+    }
+  
+    e.target.files = this.dt.files;
+  
+    document.querySelectorAll('span.file-delete').forEach((button) => {
+      button.addEventListener('click', () => {
+        let name = button.nextSibling.textContent;
+  
+        (button.parentNode as HTMLElement)?.remove();
+  
+        for (let i = 0; i < this.dt.items.length; i++) {
+          if (name === this.dt.items[i].getAsFile()?.name) {
+            this.dt.items.remove(i);
+            continue;
+          }
+        }
+  
+        e.target.files = this.dt.files;
+      });
+    });
+  };
+  
 
     private _createItem  =async (props:ITrpreqfrmProps):Promise<void>=>{
       if (!this.state.iscontractvalValid) {
@@ -387,6 +441,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       
 
   public render(): React.ReactElement<ITrpreqfrmProps> {
+   
     let curruser:any = this.props.userDisplayName;
     const successMessage: JSX.Element | null = this.state.isSuccess ?
     <MessageBar messageBarType={MessageBarType.success}>Form submitted successfully.</MessageBar>
@@ -401,6 +456,27 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       <h2>Transport Request Form</h2> 
         <div>
           <h3>Outline of the Agreement</h3>
+         
+          <div className="mt-5 text-center">
+        <label htmlFor="attachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
+          + Add
+        </label>
+        <input
+          type="file"
+          name="file[]"
+          accept=".pdf"
+          id="attachment"
+          style={{ visibility: 'hidden', position: 'absolute' }}
+          multiple
+          onChange={this.handleFileUpload}
+        />
+
+<p id="files-area">
+          <span id="filesList">
+            <span ref={this.filesNamesRef} id="files-names"></span>
+          </span>
+        </p>
+      </div>
         <PeoplePicker
             context={this.props.context as any}
             titleText="Applicant"
@@ -534,7 +610,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     <br/>
     
     <Stack horizontal horizontalAlign='end'>     
-    <PrimaryButton text="Submit" onClick={() => this._createItem(this.props)} />
+    <PrimaryButton text="Submit1" onClick={() => this._createItem(this.props)} />
     {successMessage}
     </Stack> 
         </div>
