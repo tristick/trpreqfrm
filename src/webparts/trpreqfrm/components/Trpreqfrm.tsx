@@ -12,13 +12,14 @@ import "@pnp/sp/folders";
 import { DateConvention, DateTimePicker } from '@pnp/spfx-controls-react/lib/DateTimePicker';
 import * as moment from 'moment';
 
-import { ListItemPicker } from '@pnp/spfx-controls-react';
+
 //import { ProgressIndicator, Stack } from 'office-ui-fabric-react';
 import "@pnp/sp/site-users/web";
 import "@pnp/sp/items";
 import { TextField } from '@fluentui/react/lib/TextField';
 import { PrimaryButton } from '@fluentui/react';
-import { Stack } from 'office-ui-fabric-react';
+import { MessageBar, MessageBarType, Stack } from 'office-ui-fabric-react';
+import { ListItemPicker} from '@pnp/spfx-controls-react';
 
 
 
@@ -49,7 +50,8 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       endDate:new Date(),
       dateduration:"0 Days",
       cargodescription:"",
-      contractval:0,
+      contractval:"",
+      iscontractvalValid: true,
       portpairs:"",
       freight:"",
       othercon:"",
@@ -61,7 +63,11 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       voyage:"",
       background:"",
       addothers:"",
-      InterestedPartiesId:0
+      InterestedPartiesId:0,
+      isSuccess: false,
+      
+      
+     
      
     }; 
     
@@ -75,10 +81,25 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
 (_sp.web.siteUsers.getByEmail(email)()).then(user=> {this.setState({ApplicantId:user.Id})});
  
 
-const items =(_sp.web.lists.getByTitle("Transport Contract Request").items.select("ID").top(1).orderBy("ID", false)()).then((res)=>{console.log(res)})
+/* (_sp.web.lists.getByTitle("Transport Contract Request").items.select("ID").top(1).orderBy("ID", false)()).then((latestItemId) => {
+  console.log(`Latest item ID is: ${latestItemId}`)}); */
 
 
-console.log(items);
+  async function getLatestItemId() {
+    const items = await _sp.web.lists.getByTitle("Transport Contract Request").items.orderBy("ID", false).top(1)();
+    return items.length > 0 ? items[0].ID : null;
+  }
+  
+  getLatestItemId().then((latestItemId) => {
+    let lastitemid = "TRC-"+(latestItemId +1).toString();
+    this.setState({title:lastitemid})
+    console.log('Latest item ID is:',lastitemid);
+  }).catch((error) => {
+    console.log(`Error getting latest item ID: ${error}`);
+  });
+
+
+
 }
   public _getPeoplePickerItems=(items: any[]) =>{  
   
@@ -224,7 +245,8 @@ console.log(items);
  
   }
   private _onccontractval=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
-    this.setState({contractval:newText})
+    const isNumberValid: boolean = !isNaN(Number(newText));
+    this.setState({contractval:newText || '', iscontractvalValid: isNumberValid})
  }
 
  private _onfreight=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
@@ -262,16 +284,18 @@ console.log(items);
       });
  
   }*/
+  
 
-   
     private _createItem  =async (props:ITrpreqfrmProps):Promise<void>=>{
-    
+      if (!this.state.iscontractvalValid) {
+        return;
+      }
     //console.log(this.props.context)
     const _sp :SPFI = getSP(this.props.context ) ;
   
       const iar =_sp.web.lists.getByTitle('Transport Contract Request').items.add({  
         
-        Title: this.props.userDisplayName,  
+        Title: this.state.title,  
         ApplicantId: this.state.ApplicantId,
         RequestingOffice:this.state.ValueDropdown,
         Customer:this.state.customerlist,
@@ -294,10 +318,13 @@ console.log(items);
    
       let input = document.getElementById("fileInput") as HTMLInputElement;
       console.log(input.files)
-      let file = input.files[0];
+      //let file = input.files[0];
       let files = input.files;
-    console.log(files.item)
-      let chunkSize = 40960; // Default chunksize is 10485760. This number was chosen to demonstrate file upload progress
+      for(var i=0;i<files.length;i++)
+      {
+
+        let file = input.files[i]
+        let chunkSize = 40960; // Default chunksize is 10485760. This number was chosen to demonstrate file upload progress
       this.setState({ showProgress: true });
       _sp.web.getFolderByServerRelativePath("Shared Documents").files.addChunked(file.name, file,
           data => {
@@ -323,10 +350,51 @@ console.log(items);
     //   console.log("creation failed with error") 
        
     // } 
-  } 
+  }
+  this.setState({ isSuccess: true });
+  setTimeout(() => {this.setState({  
+    title: "",  
+    users: [], 
+    partyusers: [],
+    ApplicantId:0,
+    ValueDropdown:"",
+    customerlist:"",
+    startDate:new Date(),
+    endDate:new Date(),
+    dateduration:"0 Days",
+    cargodescription:"",
+    contractval:"",
+    iscontractvalValid: true,
+    portpairs:"",
+    freight:"",
+    othercon:"",
+    applaw:"",
+   showProgress:false,
+    progressLabel: "File upload progress",
+    progressDescription: "",
+    progressPercent: 0,
+    voyage:"",
+    background:"",
+    addothers:"",
+    InterestedPartiesId:0,
+    isSuccess: false
+   
+  }); }, 2000);
+}
+      
+      
+   
+      
 
   public render(): React.ReactElement<ITrpreqfrmProps> {
-    let curruser:any = this.props.userDisplayName
+    let curruser:any = this.props.userDisplayName;
+    const successMessage: JSX.Element | null = this.state.isSuccess ?
+    <MessageBar messageBarType={MessageBarType.success}>Form submitted successfully.</MessageBar>
+    : null;
+    
+    const textFieldErrorMessage: JSX.Element | null = !this.state.iscontractvalValid ?
+      <MessageBar messageBarType={MessageBarType.error}>Please enter a valid number.</MessageBar>
+      : null;
     return (
     
     <section>
@@ -381,7 +449,10 @@ console.log(items);
                      />
    
       <Stack horizontal>
-      <DateTimePicker label="From"
+      <DateTimePicker 
+    
+      label="From"
+      maxDate={this.state.endDate}
             dateConvention={DateConvention.Date}
             value={this.state.startDate}  
             onChange={this._onchangedStartDate} 
@@ -398,7 +469,7 @@ console.log(items);
       <TextField label="Contract Duration" value={this.state.dateduration} onChange={this._onchangedduration}/>
 
       <RichText label="Cargo Description" value={this.state.cargodescription}  onChange={(text)=>this.oncargodescTextChange(text)} />
-      <TextField label="Contract Volume Per Year" value={this.state.contractval} onChange={this._onccontractval}/> 
+      <TextField label="Contract Volume Per Year" value={this.state.contractval} onChange={this._onccontractval} errorMessage={textFieldErrorMessage?.props.messageBarType === MessageBarType.error ? textFieldErrorMessage.props.children : undefined} /> 
      
       <RichText label="Port Pairs, Estimate Volume & Freight Rate" value={this.state.portpairs}  onChange={(text)=>this.onportpairsTextChange(text)}/> 
     
@@ -412,6 +483,7 @@ console.log(items);
       <RichText label="Background" value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)}/>
       <br />
       <input type="file" id="fileInput" name='files[]' multiple/><br />
+      
         {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br />
         <ProgressIndicator
           label={this.state.progressLabel}
@@ -426,7 +498,9 @@ console.log(items);
       <input type="file" id="fileInput" multiple/><br />
     <RichText label="Others" value={this.state.addothers}  onChange={(text)=>this.onaddothersTextChange(text)}/> 
     <br />
-    <input type="file" id="fileInput" multiple/><br />
+    <input type="file" id="fileInput" multiple/>
+   <br />
+  
     {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br /> */}
    {/*  <UploadFiles
           pageSize={5}
@@ -461,7 +535,7 @@ console.log(items);
     
     <Stack horizontal horizontalAlign='end'>     
     <PrimaryButton text="Submit" onClick={() => this._createItem(this.props)} />
-   
+    {successMessage}
     </Stack> 
         </div>
       </section>

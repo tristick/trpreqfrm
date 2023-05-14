@@ -1,3 +1,5 @@
+
+
 export interface ITrpreqfrmState {  
     title: string;  
     users: number[]; 
@@ -21,7 +23,9 @@ export interface ITrpreqfrmState {
     voyage:string|any;
     background:string|any;
     addothers:string|any;
-    InterestedPartiesId:any
+    InterestedPartiesId:any;
+    isSuccess: boolean;
+    iscontractvalValid:boolean
     
    
     
