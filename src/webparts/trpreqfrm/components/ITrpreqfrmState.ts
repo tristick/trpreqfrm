@@ -26,7 +26,8 @@ export interface ITrpreqfrmState {
     InterestedPartiesId:any;
     isSuccess: boolean;
     iscontractvalValid:boolean;
-    files: any[]
+    files: any[];
+    bgdocuments: string;
     
    
     

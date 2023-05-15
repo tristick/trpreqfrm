@@ -22,6 +22,7 @@ import { MessageBar, MessageBarType, Stack } from 'office-ui-fabric-react';
 import { ListItemPicker} from '@pnp/spfx-controls-react';
 import * as ReactDOM from 'react-dom';
 import "@pnp/sp/folders";
+import * as formconst from "../../constant";
 
 
 /* const options: IDropdownOption[] = [
@@ -69,7 +70,8 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       addothers:"",
       InterestedPartiesId:0,
       isSuccess: false,
-      files: []
+      files: [],
+      bgdocuments:""
      
       
      
@@ -91,7 +93,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
 
 
   async function getLatestItemId() {
-    const items = await _sp.web.lists.getByTitle("Transport Contract Request").items.orderBy("ID", false).top(1)();
+    const items = await _sp.web.lists.getByTitle(formconst.LISTNAME).items.orderBy("ID", false).top(1)();
     return items.length > 0 ? items[0].ID : null;
   }
   
@@ -257,38 +259,6 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
  private _onfreight=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
   this.setState({freight:newText})
 }
-
-  
-
-  /*private uploadFile = () => {
-    console.log("files")
-      const _sp :SPFI = getSP(this.props.context ) ;
-   let input = document.getElementById("fileInput") as HTMLInputElement;
-    let file = input.files[0];
-    let chunkSize = 40960; // Default chunksize is 10485760. This number was chosen to demonstrate file upload progress
-    this.setState({ showProgress: true });
-    _sp.web.getFolderByServerRelativePath("Shared Documents").files.addChunked(file.name, file,
-        data => {
-          let percent = (data.blockNumber / data.totalBlocks);
-          this.setState({
-            progressPercent: percent,
-            progressDescription: `${Math.round(percent * 100)} %`
-          });
-        }, true,
-        chunkSize)
-      .then(r => {
-        console.log("File uploaded successfully");
-        this.setState({
-          progressPercent: 1,
-          progressDescription: `File upload complete`
-        });
-      })
-      .catch(e => {
-        console.log("Error while uploading file");
-        console.log(e);
-      });
- 
-  }*/
   
   bghandleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     //const files = Array.prototype.slice.call(e.target.files || []);
@@ -442,17 +412,12 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       if (!this.state.iscontractvalValid) {
         return;
       }
-    //console.log(this.props.context)
-    //const webUrl = "https://k6931.sharepoint.com/sites/Rupankana";
-    const libraryName = "Shared Documents";
+    
     let folderName =this.state.title; 
-      folderUrl =libraryName + "/" + folderName    
+      folderUrl =formconst.LIBRARYNAME + "/" + folderName    
       _sp.web.folders.addUsingPath(folderUrl);
      
-   
-    
-  
-      const iar =_sp.web.lists.getByTitle('Transport Contract Request').items.add({  
+     _sp.web.lists.getByTitle(formconst.LISTNAME).items.add({  
         
         Title: this.state.title,  
         ApplicantId: this.state.ApplicantId,
@@ -470,61 +435,89 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
         VoyagePLContribution:this.state.voyage,
         Background:this.state.background,
         Others:this.state.addothers,
-        InterestedPartiesId:this.state.InterestedPartiesId
-      });  
+        InterestedPartiesId:this.state.InterestedPartiesId,
+        //BackgroundSupportingDocuments:this.state.bgdocuments
+
+      }).then((iar)=>{ 
       console.log('cargo added',this.state.cargodescription); 
       console.log('Item added',iar); 
 
+      //bgfiles
+      let bgfileurl=[];
       let bginput = document.getElementById("bgattachment") as HTMLInputElement;
       console.log(bginput.files)
-      //let file = input.files[0];
+
+      if (bginput.files.length === 0) {
+        console.log("No file selected for upload.");
+        
+      }else{
+       //let file = input.files[0];
       let bgfiles = bginput.files;
       for(var i=0;i<bgfiles.length;i++)
       {
-
         let bgfile = bginput.files[i]
-      this.setState({ showProgress: true });
-      _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(bgfile.name, bgfile,
-          data => { console.log("File uploaded successfully");
-            
-        });
-      }
+        bgfileurl.push(formconst.WEB_URL+"/"+folderUrl+ bgfile.name)
+        try {
+          _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(bgfile.name, bgfile, data => {
+            console.log("File uploaded successfully");
+          });
+        } catch (err) {
+          console.error("Error uploading file:", err);
+        }
+      }}
+      let strbgurl = bgfileurl.toString();
+      console.log(bgfileurl)
+      this.setState({ bgdocuments: strbgurl });
 
-        let vinput = document.getElementById("vattachment") as HTMLInputElement;
+
+      //vfiles
+      let vinput = document.getElementById("vattachment") as HTMLInputElement;
       console.log(vinput.files)
+      if (vinput.files.length === 0) {
+        console.log("No file selected for upload.");
+       
+      }else{
       //let file = input.files[0];
       let vfiles = vinput.files;
       for(var i=0;i<vfiles.length;i++)
       {
 
         let vfile = vinput.files[i]
-      this.setState({ showProgress: true });
-      _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(vfile.name, vfile,
-          data => { console.log("File uploaded successfully");
-            
-        });
-      }
+        try {
+          _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(vfile.name, vfile, data => {
+            console.log("File uploaded successfully");
+          });
+        } catch (err) {
+          console.error("Error uploading file:", err);
+        }
+      }}
+      
 
-        let oinput = document.getElementById("bgattachment") as HTMLInputElement;
+       //ofiles 
+        let oinput = document.getElementById("othersattachment") as HTMLInputElement;
       console.log(oinput.files)
       //let file = input.files[0];
       let ofiles = oinput.files;
+      if (oinput.files.length === 0) {
+        console.log("No file selected for upload.");
+        
+      }else{
       for(var i=0;i<ofiles.length;i++)
       {
 
         let ofile = oinput.files[i]
-      this.setState({ showProgress: true });
-      _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(ofile.name, ofile,
-          data => { console.log("File uploaded successfully");
-            
-        });
-      }
-    
-    // catch (error) { 
-    //   console.log("creation failed with error") 
-       
-    // } 
-  
+        try {
+          _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(ofile.name, ofile, data => {
+            console.log("File uploaded successfully");
+          });
+        } catch (err) {
+          console.error("Error uploading file:", err);
+        }
+      }}
+
+    }).catch((error) => {
+      console.log(error);
+  });
   this.setState({ isSuccess: true });
   setTimeout(() => {this.setState({  
     title: "",  
@@ -553,7 +546,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     InterestedPartiesId:0,
     isSuccess: false
    
-  }); }, 2000);
+  }); }, 3000);
 }   
 
   public render(): React.ReactElement<ITrpreqfrmProps> {
@@ -590,7 +583,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
             principalTypes={[PrincipalType.User]}
             resolveDelay={1000}
     />
-      <ListItemPicker listId='08e832c7-921f-4e0c-a57a-1377f87cc596'
+      <ListItemPicker listId={formconst.CUSTOMER_LIST_ID}
        context={this.props.context as any}
           columnInternalName='Title'
           keyColumnInternalName='Id'
@@ -605,7 +598,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
           defaultSelectedItems = {[]}
                      />
     
-    <ListItemPicker listId='e530e316-4ff9-428c-ab1e-5c1b38154ddd'
+    <ListItemPicker listId={formconst.REPORTING_OFFICE_LIST_ID}
        context={this.props.context as any}
           columnInternalName='Title'
           keyColumnInternalName='Id'
@@ -633,6 +626,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
                 
            
     <DateTimePicker label="To"
+    minDate={this.state.startDate}
           dateConvention={DateConvention.Date}
           value={this.state.endDate}  
           onChange={this._onchangedEndDate}  />
@@ -758,6 +752,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     
     <Stack horizontal horizontalAlign='end'>     
     <PrimaryButton text="Submit" onClick={() => this._createItem(this.props)} />
+    <PrimaryButton text="Cancel"  />
     {successMessage}
     </Stack> 
         </div>
