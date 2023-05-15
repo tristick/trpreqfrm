@@ -1,5 +1,5 @@
 import * as React from 'react';
-import './Trpreqfrm.module.scss'
+//import * as styles from './Trpreqfrm.module.scss'
 import { ITrpreqfrmProps } from './ITrpreqfrmProps';
 import { ITrpreqfrmState } from './ITrpreqfrmState';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker"; 
@@ -21,7 +21,7 @@ import { PrimaryButton } from '@fluentui/react';
 import { MessageBar, MessageBarType, Stack } from 'office-ui-fabric-react';
 import { ListItemPicker} from '@pnp/spfx-controls-react';
 import * as ReactDOM from 'react-dom';
-
+import "@pnp/sp/folders";
 
 
 /* const options: IDropdownOption[] = [
@@ -290,11 +290,11 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
  
   }*/
   
-  handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  bghandleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     //const files = Array.prototype.slice.call(e.target.files || []);
     //console.log(files);
-    const filesNames = this.filesNamesRef.current;
-  //const filesNames = document.querySelector<HTMLSpanElement>('#filesList > #files-names');
+    //const filesNames = this.filesNamesRef.current;
+  const filesNames = document.querySelector<HTMLSpanElement>('#bgfilesList > #bgfiles-names');
    // console.log(files.length);
     for (let i = 0; i < e.target.files.length; i++) {
       let fileBloc = (
@@ -309,8 +309,57 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       //console.log(fileBlocNode);
       if (filesNames) {
         const fileBlocContainer = document.createElement('div');
-ReactDOM.render(fileBloc, fileBlocContainer);
-filesNames?.appendChild(fileBlocContainer.firstChild);
+        ReactDOM.render(fileBloc, fileBlocContainer);
+        filesNames?.appendChild(fileBlocContainer.firstChild);
+      //filesNames?.appendChild(fileBloc);
+      }
+    }
+  
+    for (let file of e.target.files as any) {
+      this.dt.items.add(file);
+    }
+  
+    e.target.files = this.dt.files;
+  
+    document.querySelectorAll('span.file-delete').forEach((button) => {
+      button.addEventListener('click', () => {
+        let name = button.nextSibling.textContent;
+  
+        (button.parentNode as HTMLElement)?.remove();
+  
+        for (let i = 0; i < this.dt.items.length; i++) {
+          if (name === this.dt.items[i].getAsFile()?.name) {
+            this.dt.items.remove(i);
+            continue;
+          }
+        }
+  
+        e.target.files = this.dt.files;
+      });
+    });
+  };
+
+  vhandleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //const files = Array.prototype.slice.call(e.target.files || []);
+    //console.log(files);
+    //const filesNames = this.filesNamesRef.current;
+  const filesNames = document.querySelector<HTMLSpanElement>('#vfilesList > #vfiles-names');
+   // console.log(files.length);
+    for (let i = 0; i < e.target.files.length; i++) {
+      let fileBloc = (
+        <span key={i} className="file-block">
+          <span className="file-delete">
+            <span>x Remove </span>
+          </span>
+          <span className="name">{e.target.files.item(i).name}</span><br/>
+        </span>
+      );
+      //const fileBlocNode = fileBloc as unknown as Node; // convert to Node
+      //console.log(fileBlocNode);
+      if (filesNames) {
+        const fileBlocContainer = document.createElement('div');
+        ReactDOM.render(fileBloc, fileBlocContainer);
+        filesNames?.appendChild(fileBlocContainer.firstChild);
       //filesNames?.appendChild(fileBloc);
       }
     }
@@ -339,13 +388,69 @@ filesNames?.appendChild(fileBlocContainer.firstChild);
     });
   };
   
-
+  ohandleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    //const files = Array.prototype.slice.call(e.target.files || []);
+    //console.log(files);
+    //const filesNames = this.filesNamesRef.current;
+  const filesNames = document.querySelector<HTMLSpanElement>('#ofilesList > #ofiles-names');
+   // console.log(files.length);
+    for (let i = 0; i < e.target.files.length; i++) {
+      let fileBloc = (
+        <span key={i} className="file-block">
+          <span className="file-delete">
+            <span>x Remove </span>
+          </span>
+          <span className="name">{e.target.files.item(i).name}</span><br/>
+        </span>
+      );
+      //const fileBlocNode = fileBloc as unknown as Node; // convert to Node
+      //console.log(fileBlocNode);
+      if (filesNames) {
+        const fileBlocContainer = document.createElement('div');
+        ReactDOM.render(fileBloc, fileBlocContainer);
+        filesNames?.appendChild(fileBlocContainer.firstChild);
+      //filesNames?.appendChild(fileBloc);
+      }
+    }
+  
+    for (let file of e.target.files as any) {
+      this.dt.items.add(file);
+    }
+  
+    e.target.files = this.dt.files;
+  
+    document.querySelectorAll('span.file-delete').forEach((button) => {
+      button.addEventListener('click', () => {
+        let name = button.nextSibling.textContent;
+  
+        (button.parentNode as HTMLElement)?.remove();
+  
+        for (let i = 0; i < this.dt.items.length; i++) {
+          if (name === this.dt.items[i].getAsFile()?.name) {
+            this.dt.items.remove(i);
+            continue;
+          }
+        }
+  
+        e.target.files = this.dt.files;
+      });
+    });
+  };
     private _createItem  =async (props:ITrpreqfrmProps):Promise<void>=>{
+      const _sp :SPFI = getSP(this.props.context ) ;
+      let folderUrl: string;
       if (!this.state.iscontractvalValid) {
         return;
       }
     //console.log(this.props.context)
-    const _sp :SPFI = getSP(this.props.context ) ;
+    //const webUrl = "https://k6931.sharepoint.com/sites/Rupankana";
+    const libraryName = "Shared Documents";
+    let folderName =this.state.title; 
+      folderUrl =libraryName + "/" + folderName    
+      _sp.web.folders.addUsingPath(folderUrl);
+     
+   
+    
   
       const iar =_sp.web.lists.getByTitle('Transport Contract Request').items.add({  
         
@@ -369,42 +474,57 @@ filesNames?.appendChild(fileBlocContainer.firstChild);
       });  
       console.log('cargo added',this.state.cargodescription); 
       console.log('Item added',iar); 
-   
-      let input = document.getElementById("fileInput") as HTMLInputElement;
-      console.log(input.files)
+
+      let bginput = document.getElementById("bgattachment") as HTMLInputElement;
+      console.log(bginput.files)
       //let file = input.files[0];
-      let files = input.files;
-      for(var i=0;i<files.length;i++)
+      let bgfiles = bginput.files;
+      for(var i=0;i<bgfiles.length;i++)
       {
 
-        let file = input.files[i]
-        let chunkSize = 40960; // Default chunksize is 10485760. This number was chosen to demonstrate file upload progress
+        let bgfile = bginput.files[i]
       this.setState({ showProgress: true });
-      _sp.web.getFolderByServerRelativePath("Shared Documents").files.addChunked(file.name, file,
-          data => {
-            let percent = (data.blockNumber / data.totalBlocks);
-            this.setState({
-              progressPercent: percent,
-              progressDescription: `${Math.round(percent * 100)} %`
-            });
-          }, true,
-          chunkSize)
-        .then(r => {
-          console.log("File uploaded successfully");
-          this.setState({
-            progressPercent: 1,
-            progressDescription: `File upload complete`
-          });
-        })
-        .catch(e => {
-          console.log("Error while uploading file");
-          console.log(e);
+      _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(bgfile.name, bgfile,
+          data => { console.log("File uploaded successfully");
+            
         });
+      }
+
+        let vinput = document.getElementById("vattachment") as HTMLInputElement;
+      console.log(vinput.files)
+      //let file = input.files[0];
+      let vfiles = vinput.files;
+      for(var i=0;i<vfiles.length;i++)
+      {
+
+        let vfile = vinput.files[i]
+      this.setState({ showProgress: true });
+      _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(vfile.name, vfile,
+          data => { console.log("File uploaded successfully");
+            
+        });
+      }
+
+        let oinput = document.getElementById("bgattachment") as HTMLInputElement;
+      console.log(oinput.files)
+      //let file = input.files[0];
+      let ofiles = oinput.files;
+      for(var i=0;i<ofiles.length;i++)
+      {
+
+        let ofile = oinput.files[i]
+      this.setState({ showProgress: true });
+      _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(ofile.name, ofile,
+          data => { console.log("File uploaded successfully");
+            
+        });
+      }
+    
     // catch (error) { 
     //   console.log("creation failed with error") 
        
     // } 
-  }
+  
   this.setState({ isSuccess: true });
   setTimeout(() => {this.setState({  
     title: "",  
@@ -434,11 +554,7 @@ filesNames?.appendChild(fileBlocContainer.firstChild);
     isSuccess: false
    
   }); }, 2000);
-}
-      
-      
-   
-      
+}   
 
   public render(): React.ReactElement<ITrpreqfrmProps> {
    
@@ -456,27 +572,7 @@ filesNames?.appendChild(fileBlocContainer.firstChild);
       <h2>Transport Request Form</h2> 
         <div>
           <h3>Outline of the Agreement</h3>
-         
-          <div className="mt-5 text-center">
-        <label htmlFor="attachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
-          + Add
-        </label>
-        <input
-          type="file"
-          name="file[]"
-          accept=".pdf"
-          id="attachment"
-          style={{ visibility: 'hidden', position: 'absolute' }}
-          multiple
-          onChange={this.handleFileUpload}
-        />
-
-<p id="files-area">
-          <span id="filesList">
-            <span ref={this.filesNamesRef} id="files-names"></span>
-          </span>
-        </p>
-      </div>
+        
         <PeoplePicker
             context={this.props.context as any}
             titleText="Applicant"
@@ -558,23 +654,74 @@ filesNames?.appendChild(fileBlocContainer.firstChild);
       <h3>Additional Information</h3>
       <RichText label="Background" value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)}/>
       <br />
-      <input type="file" id="fileInput" name='files[]' multiple/><br />
-      
-        {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br />
-        <ProgressIndicator
-          label={this.state.progressLabel}
-          description={this.state.progressDescription}
-          percentComplete={this.state.progressPercent}
-          barHeight={5} /> */}
-    
+       
+      <div className="mt-5 text-center">
+        <label htmlFor="bgattachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
+          + Add Supporting Documents
+        </label>
+        <input
+          type="file"
+          name="file[]"
+          accept=""
+          id="bgattachment"
+          style={{ visibility: 'hidden', position: 'absolute' }}
+          multiple
+          onChange={this.bghandleFileUpload}
+        />
 
+        <p id="bgfiles-area">
+          <span id="bgfilesList">
+            <span ref={this.filesNamesRef} id="bgfiles-names"></span>
+          </span>
+        </p>
+      </div>
+      
       <RichText label="Voyage P/L Contribution" value={this.state.voyage}  onChange={(text)=>this.onvoyageTextChange(text)}/> 
       <br />
       {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br /> */}
-      <input type="file" id="fileInput" multiple/><br />
+       
+      <div className="mt-5 text-center">
+        <label htmlFor="vattachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
+          + Add Supporting Documents
+        </label>
+        <input
+          type="file"
+          name="file[]"
+          accept=""
+          id="vattachment"
+          style={{ visibility: 'hidden', position: 'absolute' }}
+          multiple
+          onChange={this.vhandleFileUpload}
+        />
+
+      <p id="vfiles-area">
+          <span id="vfilesList">
+            <span ref={this.filesNamesRef} id="vfiles-names"></span>
+          </span>
+        </p>
+      </div>
     <RichText label="Others" value={this.state.addothers}  onChange={(text)=>this.onaddothersTextChange(text)}/> 
     <br />
-    <input type="file" id="fileInput" multiple/>
+    <div className="mt-5 text-center">
+        <label htmlFor="othersattachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
+          + Add Supporting Documents
+        </label>
+        <input
+          type="file"
+          name="file[]"
+          accept=""
+          id="othersattachment"
+          style={{ visibility: 'hidden', position: 'absolute' }}
+          multiple
+          onChange={this.ohandleFileUpload}
+        />
+
+<p id="ofiles-area">
+          <span id="ofilesList">
+            <span ref={this.filesNamesRef} id="ofiles-names"></span>
+          </span>
+        </p>
+      </div>
    <br />
   
     {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br /> */}
@@ -610,7 +757,7 @@ filesNames?.appendChild(fileBlocContainer.firstChild);
     <br/>
     
     <Stack horizontal horizontalAlign='end'>     
-    <PrimaryButton text="Submit1" onClick={() => this._createItem(this.props)} />
+    <PrimaryButton text="Submit" onClick={() => this._createItem(this.props)} />
     {successMessage}
     </Stack> 
         </div>
