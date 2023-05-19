@@ -1,5 +1,25 @@
 @import '~@fluentui/react/dist/sass/References.scss';
 
+.ql-toolbar  {
+	display: block !important;
+}
+.stackContainer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px; /* Adjust the value to set the desired gap */
+}
+
+.extpartiesstackContainer {
+	display: flex;
+	width: '300px';
+	gap: 10px; /* Adjust the value to set the desired gap */
+  }
+
+ 
+
+.stackContainer .ms-Button {
+  margin-left: 8px;
+}
 .trpreqfrm {
   overflow: hidden;
   padding: 1em;
@@ -66,3 +86,5 @@
 		transform: rotate(45deg);
 	}
 }
+
+

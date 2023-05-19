@@ -1,10 +1,11 @@
 import * as React from 'react';
-//import * as styles from './Trpreqfrm.module.scss'
+
 import { ITrpreqfrmProps } from './ITrpreqfrmProps';
 import { ITrpreqfrmState } from './ITrpreqfrmState';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker"; 
+import styles from "./Trpreqfrm.module.scss"
 
-import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
+//import { RichText } from "@pnp/spfx-controls-react/lib/RichText";
 import { getSP } from '../../../pnpjsconfig';
 import { SPFI} from '@pnp/sp';
 import "@pnp/sp/files";
@@ -18,11 +19,16 @@ import "@pnp/sp/site-users/web";
 import "@pnp/sp/items";
 import { TextField } from '@fluentui/react/lib/TextField';
 import { PrimaryButton } from '@fluentui/react';
-import { MessageBar, MessageBarType, Stack } from 'office-ui-fabric-react';
+import { IStyleFunctionOrObject, ITextFieldStyleProps, ITextFieldStyles, Label, MessageBar, MessageBarType, Stack, getId } from 'office-ui-fabric-react';
 import { ListItemPicker} from '@pnp/spfx-controls-react';
 import * as ReactDOM from 'react-dom';
 import "@pnp/sp/folders";
 import * as formconst from "../../constant";
+import ReactQuill from 'react-quill';
+import 'react-quill/dist/quill.snow.css'; 
+
+
+
 
 
 /* const options: IDropdownOption[] = [
@@ -34,16 +40,62 @@ import * as formconst from "../../constant";
  
 ]; */
 
+/* const pickerSuggestionsProps: IBasePickerSuggestionsProps = {
+  suggestionsHeaderText: 'Suggested colors',
+  noResultsFoundText: 'No color tags found',
+};
+
+const testTags: ITag[] = [
+  'black',
+  'blue',
+  'brown',
+  'cyan',
+  'green',
+  'magenta',
+  'mauve',
+  'orange',
+  'pink',
+  'purple',
+  'red',
+  'rose',
+  'violet',
+  'white',
+  'yellow',
+].map((item) => ({ key: item, name: item[0].toUpperCase() + item.slice(1) }));
+
+const listContainsTagList = (tag: ITag, tagList?: ITag[]) => {
+  if (!tagList || !tagList.length || tagList.length === 0) {
+    return false;
+  }
+  return tagList.some((compareTag) => compareTag.key === tag.key);
+};
+
+ */
+
+
+
+const textFieldStyles: Partial<ITextFieldStyles> = {
+  field: {
+    width: '500px', // Adjust the desired width
+  },
+};
+
+
+
+
 export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqfrmState> {
 
   private dt: DataTransfer; 
  
   filesNamesRef: React.RefObject<HTMLSpanElement>;
+  handleChange: any;
+  pickerId: string;
 
   constructor(props: ITrpreqfrmProps, state: ITrpreqfrmState) {  
     super(props);  
     this.dt = new DataTransfer();
     this.filesNamesRef = React.createRef();
+    this.pickerId = getId('inline-picker');
     this.state = {  
       title: "",  
       users: [], 
@@ -71,7 +123,15 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       InterestedPartiesId:0,
       isSuccess: false,
       files: [],
-      bgdocuments:""
+      bgdocuments:"",
+      vdocuments:"",
+      odocuments:"",
+      interestedPartiesexternal: [],
+      interestedPartiesexternalstr:"",
+      newParty: "",
+      selectedTags: [],
+      baf:""
+      
      
       
      
@@ -82,7 +142,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
 
   public componentDidMount()
 {
-  
+
   let email=this.props.userDisplayName;
   const _sp :SPFI = getSP(this.props.context ) ;
 (_sp.web.siteUsers.getByEmail(email)()).then(user=> {this.setState({ApplicantId:user.Id})});
@@ -98,7 +158,9 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
   }
   
   getLatestItemId().then((latestItemId) => {
-    let lastitemid = "TRC-"+(latestItemId +1).toString();
+    let now = new Date();
+    let formattedDate = now.toISOString().split("T")[0];
+    let lastitemid = "TRC-"+(latestItemId +1)+"-"+formattedDate.toString();
     this.setState({title:lastitemid})
     console.log('Latest item ID is:',lastitemid);
   }).catch((error) => {
@@ -189,7 +251,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     
     const startDate = moment(stdate);
     const timeEnd = moment(this.state.endDate);
-    const diff = timeEnd.diff(startDate,'days').toString();
+    const diff = timeEnd.diff(startDate,'days').toString()+" Day(s)";
     //const diffDuration = moment.duration(diff)
     console.log('diffdur', diff)
     this.setState({ dateduration: diff }); 
@@ -199,23 +261,21 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     this.setState({ endDate: eddate });  
     const startDate = moment(this.state.startDate);
     const timeEnd = moment(eddate);
-    const diff = (timeEnd.diff(startDate,'days')+1).toString();
+    const diff = (timeEnd.diff(startDate,'days')+1).toString()+" Day(s)";
     //const diffDuration = moment.duration(diff);
     console.log('diffdur', diff)
     this.setState({ dateduration: diff }); 
   }
 
 
-  private _onchangedduration=(): void =>{ 
-     console.log("ch")
-  }
+  
   private oncargodescTextChange = (newText: string) => {
     this.setState({cargodescription:newText});
    
     return newText;
  
   }
-  private onportpairsTextChange = (newText: string) => {
+   private onportpairsTextChange = (newText: string) => {
     this.setState({portpairs:newText});
    
     return newText;
@@ -250,16 +310,34 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
    
     return newText;
  
-  }
+  } 
   private _onccontractval=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
     const isNumberValid: boolean = !isNaN(Number(newText));
     this.setState({contractval:newText || '', iscontractvalValid: isNumberValid})
  }
+ private _onbaf=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
 
+  this.setState({baf:newText})
+
+}
  private _onfreight=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
   this.setState({freight:newText})
 }
-  
+private _newparty=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
+  this.setState({newParty:newText})
+}
+handleAddParty = () => {
+  const { newParty, interestedPartiesexternal } = this.state;
+  if (newParty.trim() !== ''&& /^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(newParty)) {
+    const updatedParties = [...interestedPartiesexternal, newParty]
+    console.log(updatedParties)
+
+    this.setState({ interestedPartiesexternal: updatedParties, newParty: '', interestedPartiesexternalstr:JSON.stringify(updatedParties)});
+  }
+  //console.log(interestedPartiesexternal.toString())
+};
+
+
   bghandleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     //const files = Array.prototype.slice.call(e.target.files || []);
     //console.log(files);
@@ -269,10 +347,11 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     for (let i = 0; i < e.target.files.length; i++) {
       let fileBloc = (
         <span key={i} className="file-block">
-          <span className="file-delete">
-            <span>x Remove </span>
-          </span>
-          <span className="name">{e.target.files.item(i).name}</span><br/>
+          <span className="name">{e.target.files.item(i).name}</span>
+  <span className="file-delete">
+    <span> x Remove </span>
+  </span>
+  <br/>
         </span>
       );
       //const fileBlocNode = fileBloc as unknown as Node; // convert to Node
@@ -305,6 +384,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
         }
   
         e.target.files = this.dt.files;
+  
       });
     });
   };
@@ -318,10 +398,11 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     for (let i = 0; i < e.target.files.length; i++) {
       let fileBloc = (
         <span key={i} className="file-block">
-          <span className="file-delete">
-            <span>x Remove </span>
-          </span>
-          <span className="name">{e.target.files.item(i).name}</span><br/>
+        <span className="name">{e.target.files.item(i).name}</span>
+  <span className="file-delete">
+    <span> x Remove </span>
+  </span>
+  <br/>
         </span>
       );
       //const fileBlocNode = fileBloc as unknown as Node; // convert to Node
@@ -354,8 +435,10 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
         }
   
         e.target.files = this.dt.files;
+    
       });
     });
+
   };
   
   ohandleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -366,11 +449,12 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
    // console.log(files.length);
     for (let i = 0; i < e.target.files.length; i++) {
       let fileBloc = (
-        <span key={i} className="file-block">
-          <span className="file-delete">
-            <span>x Remove </span>
-          </span>
-          <span className="name">{e.target.files.item(i).name}</span><br/>
+        <span key={i} className={'file-block'}>
+         <span className="name">{e.target.files.item(i).name}</span>
+  <span className="file-delete">
+    <span> x Remove </span>
+  </span>
+  <br/>
         </span>
       );
       //const fileBlocNode = fileBloc as unknown as Node; // convert to Node
@@ -407,6 +491,8 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     });
   };
     private _createItem  =async (props:ITrpreqfrmProps):Promise<void>=>{
+
+     
       const _sp :SPFI = getSP(this.props.context ) ;
       let folderUrl: string;
       if (!this.state.iscontractvalValid) {
@@ -417,107 +503,155 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       folderUrl =formconst.LIBRARYNAME + "/" + folderName    
       _sp.web.folders.addUsingPath(folderUrl);
      
-     _sp.web.lists.getByTitle(formconst.LISTNAME).items.add({  
-        
-        Title: this.state.title,  
-        ApplicantId: this.state.ApplicantId,
-        RequestingOffice:this.state.ValueDropdown,
-        Customer:this.state.customerlist,
-        ContractPeriodStart:this.state.startDate,
-        ContractPeriodEnd:this.state.endDate,
-        ContractDuration:this.state.dateduration,
-        CargoDescription:this.state.cargodescription,
-        ContractVolumePerYear:this.state.contractval,
-        PortPairsEstVolFreightRate:this.state.portpairs,
-        FreightPayment:this.state.freight,
-        OtherConditions:this.state.othercon,
-        ApplicableLaw:this.state.applaw,
-        VoyagePLContribution:this.state.voyage,
-        Background:this.state.background,
-        Others:this.state.addothers,
-        InterestedPartiesId:this.state.InterestedPartiesId,
-        //BackgroundSupportingDocuments:this.state.bgdocuments
-
-      }).then((iar)=>{ 
-      console.log('cargo added',this.state.cargodescription); 
-      console.log('Item added',iar); 
-
-      //bgfiles
-      let bgfileurl=[];
-      let bginput = document.getElementById("bgattachment") as HTMLInputElement;
-      console.log(bginput.files)
-
-      if (bginput.files.length === 0) {
-        console.log("No file selected for upload.");
-        
-      }else{
-       //let file = input.files[0];
-      let bgfiles = bginput.files;
-      for(var i=0;i<bgfiles.length;i++)
-      {
-        let bgfile = bginput.files[i]
-        bgfileurl.push(formconst.WEB_URL+"/"+folderUrl+ bgfile.name)
-        try {
-          _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(bgfile.name, bgfile, data => {
-            console.log("File uploaded successfully");
-          });
-        } catch (err) {
-          console.error("Error uploading file:", err);
-        }
-      }}
-      let strbgurl = bgfileurl.toString();
-      console.log(bgfileurl)
-      this.setState({ bgdocuments: strbgurl });
-
-
-      //vfiles
-      let vinput = document.getElementById("vattachment") as HTMLInputElement;
-      console.log(vinput.files)
-      if (vinput.files.length === 0) {
-        console.log("No file selected for upload.");
-       
-      }else{
-      //let file = input.files[0];
-      let vfiles = vinput.files;
-      for(var i=0;i<vfiles.length;i++)
-      {
-
-        let vfile = vinput.files[i]
-        try {
-          _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(vfile.name, vfile, data => {
-            console.log("File uploaded successfully");
-          });
-        } catch (err) {
-          console.error("Error uploading file:", err);
-        }
-      }}
+      const upload = async () => {
+        // bgfiles
+        let bgfileurl = [];
+        const bgcategory = 'Background'
+        let bginput = document.getElementById("bgattachment") as HTMLInputElement;
+    
+        console.log(bginput.files);
       
-
-       //ofiles 
-        let oinput = document.getElementById("othersattachment") as HTMLInputElement;
-      console.log(oinput.files)
-      //let file = input.files[0];
-      let ofiles = oinput.files;
-      if (oinput.files.length === 0) {
-        console.log("No file selected for upload.");
+        if (bginput.files.length > 0) {
+          let bgfiles = bginput.files;
         
-      }else{
-      for(var i=0;i<ofiles.length;i++)
-      {
+          for (var i = 0; i < bgfiles.length; i++) {
+            let bgfile = bginput.files[i];
+            console.log("bgfile",bgfile)
+            bgfileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" +bgfile.name);
+            try {
+              let bguploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(bgfile.name, bgfile, (data) => {
+                console.log("File uploaded successfully");
+              });
+              let item = await bguploadedFile.file.getItem();
+              item.update({Category:bgcategory})
 
-        let ofile = oinput.files[i]
-        try {
-          _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(ofile.name, ofile, data => {
-            console.log("File uploaded successfully");
-          });
-        } catch (err) {
-          console.error("Error uploading file:", err);
+
+            } catch (err) {
+              console.error("Error uploading file:", err);
+            }
+          }
+          let convertedStr = bgfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
+        let strbgurl = convertedStr.toString();
+        console.log(strbgurl);
+        this.setState({ bgdocuments: strbgurl });
         }
-      }}
+          
+         else {
+          console.log("No file selected for upload.");
+        }
+          
+       
+        
+      
+        // vfiles
+        let vfileurl = [];
+        let vinput = document.getElementById("vattachment") as HTMLInputElement;
+        const vcategory = 'Voyage P/L Contribution'
+        console.log(vinput.files);
+        if (vinput.files.length > 0) {
+          let vfiles = vinput.files;
+        
+          for (var i = 0; i < vfiles.length; i++) {
+            let vfile = vinput.files[i];
+            console.log("vfile",vfile)
+            vfileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" + vfile.name);
+            try {
+              let vuploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(vfile.name, vfile, (data) => {
+                console.log("File uploaded successfully");
+              });
+              let item = await vuploadedFile.file.getItem();
+              item.update({Category:vcategory})
+            } catch (err) {
+              console.error("Error uploading file:", err);
+            }
+          }
+          let vconvertedStr = vfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
+        let vstrbgurl = vconvertedStr.toString();
+        console.log(vstrbgurl);
+        this.setState({ vdocuments: vstrbgurl });
+        
+        } else {
+          console.log("No file selected for upload.");
+          
+        }
+        
+      
+        // ofiles
+        let ofileurl = [];
+        let oinput = document.getElementById("othersattachment") as HTMLInputElement;
+        const ocategory = 'Others'
+        console.log(oinput.files);
+       
+        if (oinput.files.length > 0) {
+          let ofiles = oinput.files;
+       
+          for (var i = 0; i < ofiles.length; i++) {
+            let ofile = oinput.files[i];
+            console.log("ofile",ofile)
+            ofileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" + ofile.name);
+            try {
+              let ouploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(ofile.name, ofile, (data) => {
+                console.log("File uploaded successfully");
+              });
+              let item = await ouploadedFile.file.getItem();
+              item.update({Category:ocategory})      
+              
+            } catch (err) {
+              console.error("Error uploading file:", err);
+            }
+          }
+          let oconvertedStr = vfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
+          let ostrbgurl = oconvertedStr.toString();
+          console.log(ostrbgurl);
+          this.setState({ odocuments: ostrbgurl });
+          
+        } else {
+          console.log("No file selected for upload.");
+          
+        }
+       
+      }
+      
+      
+        try {
 
-    }).catch((error) => {
-      console.log(error);
-  });
+       
+         
+          await upload(); // Wait for the upload function to finish
+          _sp.web.lists.getByTitle(formconst.LISTNAME).items.add({
+            Title: this.state.title,
+            ApplicantId: this.state.ApplicantId,
+            RequestingOffice: this.state.ValueDropdown,
+            Customer: this.state.customerlist,
+            ContractPeriodStart: this.state.startDate,
+            ContractPeriodEnd: this.state.endDate,
+            ContractDuration: this.state.dateduration,
+            CargoDescription: this.state.cargodescription,
+            ContractVolumePerYear: this.state.contractval,
+            PortPairsEstVolFreightRate: this.state.portpairs,
+            FreightPayment: this.state.freight,
+            OtherConditions: this.state.othercon,
+            ApplicableLaw: this.state.applaw,
+            VoyagePLContribution: this.state.voyage,
+            Background: this.state.background,
+            Others: this.state.addothers,
+            InterestedPartiesId: this.state.InterestedPartiesId,
+            BackgroundSupportingDocuments: this.state.bgdocuments,
+            VoyageP_x002f_LContributionSuppo:this.state.vdocuments,
+            OthersSupportingDocuments:this.state.odocuments,
+            InterestedPartiesExt:this.state.interestedPartiesexternalstr,
+            BAF:this.state.baf
+
+}).then((iar)=>{ 
+
+  console.log('Item added',iar); });
+
+} catch (err) {
+console.error("Error creating item:", err);
+}
+
+           
+      
   this.setState({ isSuccess: true });
   setTimeout(() => {this.setState({  
     title: "",  
@@ -530,7 +664,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     endDate:new Date(),
     dateduration:"0 Days",
     cargodescription:"",
-    contractval:"",
+    contractval:0,
     iscontractvalValid: true,
     portpairs:"",
     freight:"",
@@ -544,14 +678,34 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     background:"",
     addothers:"",
     InterestedPartiesId:0,
-    isSuccess: false
+    isSuccess: false,
+    interestedPartiesexternal:[],
+    newParty:""
    
   }); }, 3000);
-}   
+} 
+/* filterSuggestedTags = (filterText: string, tagList: ITag[]) => {
+  return filterText
+    ? testTags.filter(
+        (tag) =>
+          tag.name.toLowerCase().indexOf(filterText.toLowerCase()) === 0 &&
+          !listContainsTagList(tag, tagList)
+      )
+    : [];
+};
+ */
+getTextFromItem = (item: { name: any; }) => item.name;
+
+handleTagChange = (selectedTags: any) => {
+  this.setState({ selectedTags });
+};
+
 
   public render(): React.ReactElement<ITrpreqfrmProps> {
+  
    
     let curruser:any = this.props.userDisplayName;
+    const {interestedPartiesexternal } = this.state;
     const successMessage: JSX.Element | null = this.state.isSuccess ?
     <MessageBar messageBarType={MessageBarType.success}>Form submitted successfully.</MessageBar>
     : null;
@@ -562,10 +716,12 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     return (
     
     <section>
-      <h2>Transport Request Form</h2> 
+   
+   
         <div>
           <h3>Outline of the Agreement</h3>
-        
+          <div>
+    </div>
         <PeoplePicker
             context={this.props.context as any}
             titleText="Applicant"
@@ -583,6 +739,20 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
             principalTypes={[PrincipalType.User]}
             resolveDelay={1000}
     />
+     {/*  <label htmlFor={this.pickerId}>Choose a color</label>
+        <TagPicker
+          removeButtonAriaLabel="Remove"
+          //selectionAriaLabel="Selected colors"
+          onResolveSuggestions={this.filterSuggestedTags}
+          getTextFromItem={this.getTextFromItem}
+          pickerSuggestionsProps={pickerSuggestionsProps}
+          itemLimit={4}
+          pickerCalloutProps={{ doNotLayer: true }}
+          inputProps={{ id: this.pickerId }}
+          selectedItems={selectedTags}
+          onChange={this.handleTagChange}
+        />
+      */}
       <ListItemPicker listId={formconst.CUSTOMER_LIST_ID}
        context={this.props.context as any}
           columnInternalName='Title'
@@ -632,24 +802,66 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
           onChange={this._onchangedEndDate}  />
     </Stack>  
 
-      <TextField label="Contract Duration" value={this.state.dateduration} onChange={this._onchangedduration}/>
+      {/* <TextField label="Contract Duration" value={this.state.dateduration} onChange={this._onchangedduration}/> */}
+      <div><p>Contract Duration</p></div>
+      <Label>{this.state.dateduration}</Label>
 
-      <RichText label="Cargo Description" value={this.state.cargodescription}  onChange={(text)=>this.oncargodescTextChange(text)} />
+      {/* <RichText label="Cargo Description" value={this.state.cargodescription}  onChange={(text)=>this.oncargodescTextChange(text)} isEditMode ={true}/> */}
+      <div><p>Cargo Description</p></div>
+      <ReactQuill theme='snow'
+    
+      modules={formconst.modules}    
+      formats={formconst.formats}  
+      value={this.state.cargodescription}  onChange={(text)=>this.oncargodescTextChange(text)}  
+        
+   ></ReactQuill> 
       <TextField label="Contract Volume Per Year" value={this.state.contractval} onChange={this._onccontractval} errorMessage={textFieldErrorMessage?.props.messageBarType === MessageBarType.error ? textFieldErrorMessage.props.children : undefined} /> 
      
-      <RichText label="Port Pairs, Estimate Volume & Freight Rate" value={this.state.portpairs}  onChange={(text)=>this.onportpairsTextChange(text)}/> 
-    
+      {/* <RichText label="Port Pairs, Estimate Volume & Freight Rate" value={this.state.portpairs}  onChange={(text)=>this.onportpairsTextChange(text)}/>  */}
+      <div><p>Port Pairs, Estimate Volume & Freight Rate</p></div>
+      <ReactQuill theme='snow'
+      modules={formconst.modules}    
+      formats={formconst.formats}   
+      value={this.state.portpairs}  onChange={(text)=>this.onportpairsTextChange(text)} 
+        
+   ></ReactQuill> 
+    <TextField label="BAF" value={this.state.baf} onChange={this._onbaf}/>
       <TextField label="Freight Payment" value={this.state.freight} onChange={this._onfreight}/>
-      <RichText label="Other Conditions" value={this.state.othercon}  onChange={(text)=>this.ontherconTextChange(text)}/> 
-      <RichText label="Applicable Law" value={this.state.applaw}  onChange={(text)=>this.onapplawTextChange(text)}/> <br/>
+{/*       <RichText label="Other Conditions" value={this.state.othercon}  onChange={(text)=>this.ontherconTextChange(text)}/>
+ 
+ */}     
+ <div><p>Other Conditions</p></div>
+  <ReactQuill theme='snow'
+      modules={formconst.modules}    
+      formats={formconst.formats}   
+      value={this.state.othercon}  onChange={(text)=>this.ontherconTextChange(text)}
+        
+   ></ReactQuill> 
+    
+{/*       <RichText label="Applicable Law" value={this.state.applaw}  onChange={(text)=>this.onapplawTextChange(text)}/> <br/>
+ */} 
+ <div><p>Applicable Law</p></div>
+      <ReactQuill theme='snow'
+      modules={formconst.modules}    
+      formats={formconst.formats}   
+      value={this.state.applaw}  onChange={(text)=>this.onapplawTextChange(text)}
+        
+   ></ReactQuill> 
+    
       <PrimaryButton text="Show Additional Information" />
       </div>
       <div>
       <h3>Additional Information</h3>
-      <RichText label="Background" value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)}/>
+      {/* <RichText label="Background" value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)}/> */}
+      <div><p>Background</p></div>
+      <ReactQuill theme='snow'
+      modules={formconst.modules}    
+      formats={formconst.formats}    
+      value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)} 
+   ></ReactQuill> 
       <br />
        
-      <div className="mt-5 text-center">
+      <div id = "background" className="mt-5 text-center">
         <label htmlFor="bgattachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
           + Add Supporting Documents
         </label>
@@ -670,9 +882,16 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
         </p>
       </div>
       
-      <RichText label="Voyage P/L Contribution" value={this.state.voyage}  onChange={(text)=>this.onvoyageTextChange(text)}/> 
+      {/* <RichText label="Voyage P/L Contribution" value={this.state.voyage}  onChange={(text)=>this.onvoyageTextChange(text)}/>  */}
+      <div><p>Voyage P/L Contribution</p></div>
+      <ReactQuill theme='snow'
+      modules={formconst.modules}    
+      formats={formconst.formats}  
+      value={this.state.voyage}  onChange={(text)=>this.onvoyageTextChange(text)}  
+        
+   ></ReactQuill> 
       <br />
-      {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br /> */}
+   
        
       <div className="mt-5 text-center">
         <label htmlFor="vattachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
@@ -694,7 +913,14 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
           </span>
         </p>
       </div>
-    <RichText label="Others" value={this.state.addothers}  onChange={(text)=>this.onaddothersTextChange(text)}/> 
+    {/* <RichText label="Others" value={this.state.addothers}  onChange={(text)=>this.onaddothersTextChange(text)}/>  */}
+    <div><p>Others</p></div>
+    <ReactQuill theme='snow'
+      modules={formconst.modules}    
+      formats={formconst.formats}    
+      value={this.state.addothers}  onChange={(text)=>this.onaddothersTextChange(text)}
+        
+   ></ReactQuill> 
     <br />
     <div className="mt-5 text-center">
         <label htmlFor="othersattachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
@@ -717,27 +943,11 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
         </p>
       </div>
    <br />
-  
-    {/* <PrimaryButton text="Upload" onClick={this.uploadFile} /> <br /> */}
-   {/*  <UploadFiles
-          pageSize={5}
-          context={this.props.context as any}
-          title="Upload Files"
-          onUploadFiles={(files) => {
-            console.log("files", files);
-            const _sp :SPFI = getSP(this.props.context ) ;
-            files.forEach(function (value) {
-            //let file = files[0];
-        _sp.web.getFolderByServerRelativePath("Shared Documents").files.addChunked(value.name,value as Blob , data => {
-              console.log(`progress`);
-              }, true);})
-          }}
-          
-        /> */}
+ 
       
     <PeoplePicker
         context={this.props.context as any}
-        titleText="Interested Parties"
+        titleText="Interested Parties (Internal)"
         personSelectionLimit={5}
         groupName={""} 
         showtooltip={false}
@@ -749,8 +959,28 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
         principalTypes={[PrincipalType.User]}
         resolveDelay={1000} />                  
     <br/>
-    
-    <Stack horizontal horizontalAlign='end'>     
+    <Stack horizontal verticalAlign="end" className={styles.extpartiesstackContainer }>
+          <TextField
+            label="Interested Parties (External)"
+            value={this.state.newParty}
+            styles={textFieldStyles as IStyleFunctionOrObject<ITextFieldStyleProps, ITextFieldStyles>}
+            onChange={this._newparty}
+            onGetErrorMessage={(value) => {
+              if (value && !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
+                return 'Please enter a valid email address';
+              }
+              return '';
+            }}
+          />
+          <PrimaryButton text="Add" onClick={this.handleAddParty} />
+        </Stack>
+        <div>
+          {interestedPartiesexternal.map((party: any, index: React.Key) => (
+            <span key={index}>{party}{index !== interestedPartiesexternal.length - 1 && '; '}</span>
+          ))}
+        </div>
+        <br/>
+    <Stack horizontal horizontalAlign='end' className={styles.stackContainer}>     
     <PrimaryButton text="Submit" onClick={() => this._createItem(this.props)} />
     <PrimaryButton text="Cancel"  />
     {successMessage}

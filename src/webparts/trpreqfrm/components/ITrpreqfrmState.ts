@@ -28,7 +28,15 @@ export interface ITrpreqfrmState {
     iscontractvalValid:boolean;
     files: any[];
     bgdocuments: string;
+    vdocuments: string;
+    odocuments:string;
+    interestedPartiesexternal: string[],
+    interestedPartiesexternalstr:string,
+      newParty: string
+      selectedTags: any[]
+      baf:string
     
+      
    
     
 } 
