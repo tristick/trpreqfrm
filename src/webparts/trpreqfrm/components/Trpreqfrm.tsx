@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { ITrpreqfrmProps } from './ITrpreqfrmProps';
+import { ICustomer, ITrc, ITrpreqfrmProps } from './ITrpreqfrmProps';
 import { ITrpreqfrmState } from './ITrpreqfrmState';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker"; 
 import styles from "./Trpreqfrm.module.scss"
@@ -26,6 +26,7 @@ import "@pnp/sp/folders";
 import * as formconst from "../../constant";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; 
+import { getCustomerItems, getCustomerRef, getLatestItemId } from '../../../services/formservices';
 
 
 
@@ -81,19 +82,25 @@ const textFieldStyles: Partial<ITextFieldStyles> = {
 };
 
 
+  let listId: number;
 
 
 export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqfrmState> {
 
-  private dt: DataTransfer; 
+  private bdt: DataTransfer; 
+  private vdt: DataTransfer; 
+  private odt: DataTransfer; 
+  
  
   filesNamesRef: React.RefObject<HTMLSpanElement>;
   handleChange: any;
   pickerId: string;
-
+  
   constructor(props: ITrpreqfrmProps, state: ITrpreqfrmState) {  
     super(props);  
-    this.dt = new DataTransfer();
+    this.bdt = new DataTransfer();
+    this.vdt = new DataTransfer();
+    this.odt = new DataTransfer();
     this.filesNamesRef = React.createRef();
     this.pickerId = getId('inline-picker');
     this.state = {  
@@ -107,7 +114,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       endDate:new Date(),
       dateduration:"0 Days",
       cargodescription:"",
-      contractval:"",
+      contractval:0,
       iscontractvalValid: true,
       portpairs:"",
       freight:"",
@@ -145,31 +152,47 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
 
   let email=this.props.userDisplayName;
   const _sp :SPFI = getSP(this.props.context ) ;
-(_sp.web.siteUsers.getByEmail(email)()).then(user=> {this.setState({ApplicantId:user.Id})});
+  (_sp.web.siteUsers.getByEmail(email)()).then(user=> {this.setState({ApplicantId:user.Id})});
  
-
-/* (_sp.web.lists.getByTitle("Transport Contract Request").items.select("ID").top(1).orderBy("ID", false)()).then((latestItemId) => {
-  console.log(`Latest item ID is: ${latestItemId}`)}); */
-
-
-  async function getLatestItemId() {
-    const items = await _sp.web.lists.getByTitle(formconst.LISTNAME).items.orderBy("ID", false).top(1)();
-    return items.length > 0 ? items[0].ID : null;
-  }
+ this.fetchListId();
   
-  getLatestItemId().then((latestItemId) => {
-    let now = new Date();
-    let formattedDate = now.toISOString().split("T")[0];
-    let lastitemid = "TRC-"+(latestItemId +1)+"-"+formattedDate.toString();
-    this.setState({title:lastitemid})
-    console.log('Latest item ID is:',lastitemid);
-  }).catch((error) => {
-    console.log(`Error getting latest item ID: ${error}`);
-  });
-
-
-
+  this.fetchCustomerItems();
 }
+
+fetchListId = async () => {
+  try {
+    
+    const latestItemId: ITrc[] | null = await getLatestItemId(this.props);
+
+    if (latestItemId) {
+      listId = latestItemId[0]?.ID;
+      console.log('List ID:', listId);
+    } else {
+      listId = 0;
+      console.log('No items found');
+    }
+  } catch (error) {
+    console.error('Error fetching list ID:', error);
+  }
+};
+
+fetchCustomerItems = async () => {
+  try {
+    const customerItems: ICustomer[] = await getCustomerItems(this.props);
+    console.log('Fetched customer items:', customerItems);
+     customerItems.forEach((customerItem) => {
+    const TitleValue = customerItem.Title; 
+    const ReferenceValue = customerItem.Reference; 
+    console.log('Title Value:', TitleValue);
+    console.log('Reference Value:', ReferenceValue);
+    
+  });
+  } catch (error) {
+    console.error('Error fetching customer items:', error);
+  }
+};
+
+
   public _getPeoplePickerItems=(items: any[]) =>{  
   
   let userid =items[0].id
@@ -213,6 +236,21 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     
     if(data.length>0){
     this.setState({customerlist:data[0].name as string})
+    getCustomerRef(this.props,data[0].name).then((customerRef: string)=>{
+      console.log(customerRef);
+      let now = new Date();
+      let options: Intl.DateTimeFormatOptions = {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      };
+      
+    let formattedDate = now.toLocaleDateString('en-GB', options).replace(/\//g, '-');;
+    let lastitemid = customerRef +"-"+(listId +1)+"-"+formattedDate.toString();
+    console.log(lastitemid)
+    this.setState({title:lastitemid})
+    })
+
     }else{
       this.setState({customerlist:"No Country Selected"})
     }
@@ -332,7 +370,7 @@ handleAddParty = () => {
     const updatedParties = [...interestedPartiesexternal, newParty]
     console.log(updatedParties)
 
-    this.setState({ interestedPartiesexternal: updatedParties, newParty: '', interestedPartiesexternalstr:JSON.stringify(updatedParties)});
+    this.setState({ interestedPartiesexternal: updatedParties, newParty: '', interestedPartiesexternalstr:(JSON.stringify(updatedParties)).slice(1, -1).replace(/"/g, '')});
   }
   //console.log(interestedPartiesexternal.toString())
 };
@@ -365,10 +403,10 @@ handleAddParty = () => {
     }
   
     for (let file of e.target.files as any) {
-      this.dt.items.add(file);
+      this.bdt.items.add(file);
     }
   
-    e.target.files = this.dt.files;
+    e.target.files = this.bdt.files;
   
     document.querySelectorAll('span.file-delete').forEach((button) => {
       button.addEventListener('click', () => {
@@ -376,14 +414,14 @@ handleAddParty = () => {
   
         (button.parentNode as HTMLElement)?.remove();
   
-        for (let i = 0; i < this.dt.items.length; i++) {
-          if (name === this.dt.items[i].getAsFile()?.name) {
-            this.dt.items.remove(i);
+        for (let i = 0; i < this.bdt.items.length; i++) {
+          if (name === this.bdt.items[i].getAsFile()?.name) {
+            this.bdt.items.remove(i);
             continue;
           }
         }
   
-        e.target.files = this.dt.files;
+        e.target.files = this.bdt.files;
   
       });
     });
@@ -416,10 +454,10 @@ handleAddParty = () => {
     }
   
     for (let file of e.target.files as any) {
-      this.dt.items.add(file);
+      this.vdt.items.add(file);
     }
   
-    e.target.files = this.dt.files;
+    e.target.files = this.vdt.files;
   
     document.querySelectorAll('span.file-delete').forEach((button) => {
       button.addEventListener('click', () => {
@@ -427,14 +465,14 @@ handleAddParty = () => {
   
         (button.parentNode as HTMLElement)?.remove();
   
-        for (let i = 0; i < this.dt.items.length; i++) {
-          if (name === this.dt.items[i].getAsFile()?.name) {
-            this.dt.items.remove(i);
+        for (let i = 0; i < this.vdt.items.length; i++) {
+          if (name === this.vdt.items[i].getAsFile()?.name) {
+            this.vdt.items.remove(i);
             continue;
           }
         }
   
-        e.target.files = this.dt.files;
+        e.target.files = this.vdt.files;
     
       });
     });
@@ -451,10 +489,10 @@ handleAddParty = () => {
       let fileBloc = (
         <span key={i} className={'file-block'}>
          <span className="name">{e.target.files.item(i).name}</span>
-  <span className="file-delete">
-    <span> x Remove </span>
-  </span>
-  <br/>
+          <span className="file-delete">
+         <span> x Remove </span>
+         </span>
+           <br/>
         </span>
       );
       //const fileBlocNode = fileBloc as unknown as Node; // convert to Node
@@ -468,10 +506,10 @@ handleAddParty = () => {
     }
   
     for (let file of e.target.files as any) {
-      this.dt.items.add(file);
+      this.odt.items.add(file);
     }
   
-    e.target.files = this.dt.files;
+    e.target.files = this.odt.files;
   
     document.querySelectorAll('span.file-delete').forEach((button) => {
       button.addEventListener('click', () => {
@@ -479,14 +517,14 @@ handleAddParty = () => {
   
         (button.parentNode as HTMLElement)?.remove();
   
-        for (let i = 0; i < this.dt.items.length; i++) {
-          if (name === this.dt.items[i].getAsFile()?.name) {
-            this.dt.items.remove(i);
+        for (let i = 0; i < this.odt.items.length; i++) {
+          if (name === this.odt.items[i].getAsFile()?.name) {
+            this.odt.items.remove(i);
             continue;
           }
         }
   
-        e.target.files = this.dt.files;
+        e.target.files = this.odt.files;
       });
     });
   };
@@ -499,7 +537,7 @@ handleAddParty = () => {
         return;
       }
     
-    let folderName =this.state.title; 
+        let folderName =this.state.title; 
       folderUrl =formconst.LIBRARYNAME + "/" + folderName    
       _sp.web.folders.addUsingPath(folderUrl);
      
@@ -618,6 +656,8 @@ handleAddParty = () => {
        
          
           await upload(); // Wait for the upload function to finish
+
+
           _sp.web.lists.getByTitle(formconst.LISTNAME).items.add({
             Title: this.state.title,
             ApplicantId: this.state.ApplicantId,

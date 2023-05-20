@@ -9,3 +9,18 @@ export interface ITrpreqfrmProps {
  
   context: WebPartContext
 }
+
+export interface ICustomer {
+
+  Title:string;
+  Reference:string;
+}
+
+export interface ITrc {
+
+  Tittle:string;
+  ID:any;
+  
+}
+
+
