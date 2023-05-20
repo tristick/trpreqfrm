@@ -112,7 +112,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       customerlist:"",
       startDate:new Date(),
       endDate:new Date(),
-      dateduration:"0 Days",
+      dateduration:"0",
       cargodescription:"",
       contractval:0,
       iscontractvalValid: true,
@@ -246,7 +246,7 @@ fetchCustomerItems = async () => {
       };
       
     let formattedDate = now.toLocaleDateString('en-GB', options).replace(/\//g, '-');;
-    let lastitemid = customerRef +"-"+(listId +1)+"-"+formattedDate.toString();
+    let lastitemid = (listId +1)+"-"+customerRef +"-"+formattedDate.toString();
     console.log(lastitemid)
     this.setState({title:lastitemid})
     })
@@ -289,7 +289,7 @@ fetchCustomerItems = async () => {
     
     const startDate = moment(stdate);
     const timeEnd = moment(this.state.endDate);
-    const diff = timeEnd.diff(startDate,'days').toString()+" Day(s)";
+    const diff = timeEnd.diff(startDate,'days').toString();
     //const diffDuration = moment.duration(diff)
     console.log('diffdur', diff)
     this.setState({ dateduration: diff }); 
@@ -299,7 +299,7 @@ fetchCustomerItems = async () => {
     this.setState({ endDate: eddate });  
     const startDate = moment(this.state.startDate);
     const timeEnd = moment(eddate);
-    const diff = (timeEnd.diff(startDate,'days')+1).toString()+" Day(s)";
+    const diff = (timeEnd.diff(startDate,'days')+1).toString();
     //const diffDuration = moment.duration(diff);
     console.log('diffdur', diff)
     this.setState({ dateduration: diff }); 
@@ -387,7 +387,7 @@ handleAddParty = () => {
         <span key={i} className="file-block">
           <span className="name">{e.target.files.item(i).name}</span>
   <span className="file-delete">
-    <span> x Remove </span>
+     <button> Remove</button>
   </span>
   <br/>
         </span>
@@ -438,7 +438,7 @@ handleAddParty = () => {
         <span key={i} className="file-block">
         <span className="name">{e.target.files.item(i).name}</span>
   <span className="file-delete">
-    <span> x Remove </span>
+    <button> Remove</button>
   </span>
   <br/>
         </span>
@@ -490,7 +490,7 @@ handleAddParty = () => {
         <span key={i} className={'file-block'}>
          <span className="name">{e.target.files.item(i).name}</span>
           <span className="file-delete">
-         <span> x Remove </span>
+          <button> Remove</button>
          </span>
            <br/>
         </span>
@@ -538,7 +538,11 @@ handleAddParty = () => {
       }
     
         let folderName =this.state.title; 
-      folderUrl =formconst.LIBRARYNAME + "/" + folderName    
+      //folderUrl =formconst.LIBRARYNAME + "/" + folderName    
+      folderUrl = formconst.LIBRARYNAME +"/" + this.state.customerlist + "/" + folderName
+      //let listFolderpath=formconst.WEB_URL+"/Lists/"+ formconst.LISTNAME+"/" +this.state.customerlist; 
+
+     // console.log(listFolderpath);
       _sp.web.folders.addUsingPath(folderUrl);
      
       const upload = async () => {
@@ -677,7 +681,7 @@ handleAddParty = () => {
             Others: this.state.addothers,
             InterestedPartiesId: this.state.InterestedPartiesId,
             BackgroundSupportingDocuments: this.state.bgdocuments,
-            VoyageP_x002f_LContributionSuppo:this.state.vdocuments,
+            VoyagePLContributionSupportingDo:this.state.vdocuments,
             OthersSupportingDocuments:this.state.odocuments,
             InterestedPartiesExt:this.state.interestedPartiesexternalstr,
             BAF:this.state.baf
@@ -702,7 +706,7 @@ console.error("Error creating item:", err);
     customerlist:"",
     startDate:new Date(),
     endDate:new Date(),
-    dateduration:"0 Days",
+    dateduration:"0",
     cargodescription:"",
     contractval:0,
     iscontractvalValid: true,
@@ -843,7 +847,7 @@ handleTagChange = (selectedTags: any) => {
     </Stack>  
 
       {/* <TextField label="Contract Duration" value={this.state.dateduration} onChange={this._onchangedduration}/> */}
-      <div><p>Contract Duration</p></div>
+      <div><p>Contract Duration (Days)</p></div>
       <Label>{this.state.dateduration}</Label>
 
       {/* <RichText label="Cargo Description" value={this.state.cargodescription}  onChange={(text)=>this.oncargodescTextChange(text)} isEditMode ={true}/> */}
@@ -888,7 +892,7 @@ handleTagChange = (selectedTags: any) => {
         
    ></ReactQuill> 
     
-      <PrimaryButton text="Show Additional Information" />
+
       </div>
       <div>
       <h3>Additional Information</h3>
@@ -987,7 +991,7 @@ handleTagChange = (selectedTags: any) => {
       
     <PeoplePicker
         context={this.props.context as any}
-        titleText="Interested Parties (Internal)"
+        titleText="Interested Parties (MOLEA)"
         personSelectionLimit={5}
         groupName={""} 
         showtooltip={false}
@@ -1012,7 +1016,7 @@ handleTagChange = (selectedTags: any) => {
               return '';
             }}
           />
-          <PrimaryButton text="Add" onClick={this.handleAddParty} />
+          <PrimaryButton text="+" onClick={this.handleAddParty} />
         </Stack>
         <div>
           {interestedPartiesexternal.map((party: any, index: React.Key) => (
