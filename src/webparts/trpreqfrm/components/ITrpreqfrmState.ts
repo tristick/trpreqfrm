@@ -2,7 +2,8 @@
 
 export interface ITrpreqfrmState {  
     title: string;  
-    users: number[]; 
+    users: string []; 
+    usersstr:string
     partyusers:number[];
     ApplicantId:any;
     ValueDropdown:string ;

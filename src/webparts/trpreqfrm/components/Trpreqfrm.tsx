@@ -1,6 +1,6 @@
 import * as React from 'react';
 
-import { ICustomer, ITrc, ITrpreqfrmProps } from './ITrpreqfrmProps';
+import { ICustomer, ITrpreqfrmProps } from './ITrpreqfrmProps';
 import { ITrpreqfrmState } from './ITrpreqfrmState';
 import { PeoplePicker, PrincipalType } from "@pnp/spfx-controls-react/lib/PeoplePicker"; 
 import styles from "./Trpreqfrm.module.scss"
@@ -26,7 +26,7 @@ import "@pnp/sp/folders";
 import * as formconst from "../../constant";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; 
-import { getCustomerItems, getCustomerRef, getLatestItemId } from '../../../services/formservices';
+import { getCustomerItems, getCustomerRef, getOfficeRef, submitDataAndGetId, updateData } from '../../../services/formservices';
 
 
 
@@ -83,6 +83,8 @@ const textFieldStyles: Partial<ITextFieldStyles> = {
 
 
   let listId: number;
+  let customerreference:string;
+  let officereference:string;
 
 
 export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqfrmState> {
@@ -106,6 +108,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
     this.state = {  
       title: "",  
       users: [], 
+      usersstr:"",
       partyusers: [],
       ApplicantId:0,
       ValueDropdown:"",
@@ -154,12 +157,12 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
   const _sp :SPFI = getSP(this.props.context ) ;
   (_sp.web.siteUsers.getByEmail(email)()).then(user=> {this.setState({ApplicantId:user.Id})});
  
- this.fetchListId();
+ //this.fetchListId();
   
   this.fetchCustomerItems();
 }
 
-fetchListId = async () => {
+/* fetchListId = async () => {
   try {
     
     const latestItemId: ITrc[] | null = await getLatestItemId(this.props);
@@ -175,7 +178,7 @@ fetchListId = async () => {
     console.error('Error fetching list ID:', error);
   }
 };
-
+ */
 fetchCustomerItems = async () => {
   try {
     const customerItems: ICustomer[] = await getCustomerItems(this.props);
@@ -213,20 +216,21 @@ fetchCustomerItems = async () => {
   } 
   public _getPartiesPeoplePickerItems=(items: any[]) =>{  
    console.log(items)
-    let userid =items[0].id
+    /* let userid =items[0].id
       this.setState({ InterestedPartiesId: userid });
-      console.log('Items new:', userid ); 
+      console.log('Items new:', userid );  */
       /* let getSelectedUsers = [];  
       for (let item in items) {  
         getSelectedUsers.push(items[item].id);  
       }  
       this.setState({ users: getSelectedUsers });  */
-     /* let selectedUsers: any[] = [];
+      let selectedUsers: string[] = [];
       items.map((item) => {
         selectedUsers.push(item.id);
+       
       });
        this.setState({users: selectedUsers});
-      console.log('users:',selectedUsers)  */
+      console.log('users:',selectedUsers)  
       
     } 
  /*  public onDropdownChange = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption): void => {
@@ -237,18 +241,10 @@ fetchCustomerItems = async () => {
     if(data.length>0){
     this.setState({customerlist:data[0].name as string})
     getCustomerRef(this.props,data[0].name).then((customerRef: string)=>{
+
+      customerreference = customerRef
       console.log(customerRef);
-      let now = new Date();
-      let options: Intl.DateTimeFormatOptions = {
-        day: '2-digit',
-        month: '2-digit',
-        year: 'numeric'
-      };
       
-    let formattedDate = now.toLocaleDateString('en-GB', options).replace(/\//g, '-');;
-    let lastitemid = (listId +1)+"-"+customerRef +"-"+formattedDate.toString();
-    console.log(lastitemid)
-    this.setState({title:lastitemid})
     })
 
     }else{
@@ -270,6 +266,12 @@ fetchCustomerItems = async () => {
     
     if(data.length>0){
     this.setState({ValueDropdown:data[0].name as string})
+    getOfficeRef(this.props,data[0].name).then((officeRef: string)=>{
+
+      officereference = officeRef
+      console.log(officereference);
+      
+    })
     }else{
       this.setState({ValueDropdown:"No Office Selected"})
     }
@@ -531,172 +533,90 @@ handleAddParty = () => {
     private _createItem  =async (props:ITrpreqfrmProps):Promise<void>=>{
 
      
-      const _sp :SPFI = getSP(this.props.context ) ;
+     // const _sp :SPFI = getSP(this.props.context ) ;
       let folderUrl: string;
       if (!this.state.iscontractvalValid) {
         return;
       }
-    
-        let folderName =this.state.title; 
-      //folderUrl =formconst.LIBRARYNAME + "/" + folderName    
-      folderUrl = formconst.LIBRARYNAME +"/" + this.state.customerlist + "/" + folderName
-      //let listFolderpath=formconst.WEB_URL+"/Lists/"+ formconst.LISTNAME+"/" +this.state.customerlist; 
+      let listFolderpath=formconst.WEB_URL+"/Lists/"+ formconst.LISTNAME+"/" +this.state.customerlist; 
 
      // console.log(listFolderpath);
-      _sp.web.folders.addUsingPath(folderUrl);
+      //_sp.web.folders.addUsingPath(folderUrl);
+      
+      const data = {
+        Title: 'New Item creation in process',
      
-      const upload = async () => {
-        // bgfiles
-        let bgfileurl = [];
-        const bgcategory = 'Background'
-        let bginput = document.getElementById("bgattachment") as HTMLInputElement;
-    
-        console.log(bginput.files);
-      
-        if (bginput.files.length > 0) {
-          let bgfiles = bginput.files;
-        
-          for (var i = 0; i < bgfiles.length; i++) {
-            let bgfile = bginput.files[i];
-            console.log("bgfile",bgfile)
-            bgfileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" +bgfile.name);
-            try {
-              let bguploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(bgfile.name, bgfile, (data) => {
-                console.log("File uploaded successfully");
-              });
-              let item = await bguploadedFile.file.getItem();
-              item.update({Category:bgcategory})
+      };
+      submitDataAndGetId(this.props,data,listFolderpath).then(async (itemId: any) => {
+        listId = itemId   
+        console.log(`Item created with ID: ${itemId}`);
 
-
-            } catch (err) {
-              console.error("Error uploading file:", err);
-            }
-          }
-          let convertedStr = bgfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
-        let strbgurl = convertedStr.toString();
-        console.log(strbgurl);
-        this.setState({ bgdocuments: strbgurl });
-        }
-          
-         else {
-          console.log("No file selected for upload.");
-        }
-          
-       
-        
-      
-        // vfiles
-        let vfileurl = [];
-        let vinput = document.getElementById("vattachment") as HTMLInputElement;
-        const vcategory = 'Voyage P/L Contribution'
-        console.log(vinput.files);
-        if (vinput.files.length > 0) {
-          let vfiles = vinput.files;
-        
-          for (var i = 0; i < vfiles.length; i++) {
-            let vfile = vinput.files[i];
-            console.log("vfile",vfile)
-            vfileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" + vfile.name);
-            try {
-              let vuploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(vfile.name, vfile, (data) => {
-                console.log("File uploaded successfully");
-              });
-              let item = await vuploadedFile.file.getItem();
-              item.update({Category:vcategory})
-            } catch (err) {
-              console.error("Error uploading file:", err);
-            }
-          }
-          let vconvertedStr = vfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
-        let vstrbgurl = vconvertedStr.toString();
-        console.log(vstrbgurl);
-        this.setState({ vdocuments: vstrbgurl });
-        
-        } else {
-          console.log("No file selected for upload.");
-          
-        }
-        
-      
-        // ofiles
-        let ofileurl = [];
-        let oinput = document.getElementById("othersattachment") as HTMLInputElement;
-        const ocategory = 'Others'
-        console.log(oinput.files);
-       
-        if (oinput.files.length > 0) {
-          let ofiles = oinput.files;
-       
-          for (var i = 0; i < ofiles.length; i++) {
-            let ofile = oinput.files[i];
-            console.log("ofile",ofile)
-            ofileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" + ofile.name);
-            try {
-              let ouploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(ofile.name, ofile, (data) => {
-                console.log("File uploaded successfully");
-              });
-              let item = await ouploadedFile.file.getItem();
-              item.update({Category:ocategory})      
-              
-            } catch (err) {
-              console.error("Error uploading file:", err);
-            }
-          }
-          let oconvertedStr = vfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
-          let ostrbgurl = oconvertedStr.toString();
-          console.log(ostrbgurl);
-          this.setState({ odocuments: ostrbgurl });
-          
-        } else {
-          console.log("No file selected for upload.");
-          
-        }
-       
+        //Request ID format
+        let now = new Date();
+        let options: Intl.DateTimeFormatOptions = {
+        day: '2-digit',
+        month: '2-digit',
+        year: 'numeric'
+      };
+      let listIdstr
+       if(listId < 1000 && listId > 100){
+        listIdstr = "0"+String(listId)
+      }else if(listId < 100){
+        listIdstr ="00"+String(listId)
+      } else if(listId < 10) {
+        listIdstr ="000"+String(listId)
+      }else{
+        listIdstr = String(listId)
       }
       
+      console.log(listIdstr)
+      let formattedDate = now.toLocaleDateString('en-GB', options).replace(/\//g, '');;
+      let lastitemid = (listIdstr)+"-"+customerreference+"-"+officereference +"-" +formattedDate.toString();
+
+     
+      console.log(lastitemid)
+    
       
-        try {
-
-       
-         
-          await upload(); // Wait for the upload function to finish
-
-
-          _sp.web.lists.getByTitle(formconst.LISTNAME).items.add({
-            Title: this.state.title,
-            ApplicantId: this.state.ApplicantId,
-            RequestingOffice: this.state.ValueDropdown,
-            Customer: this.state.customerlist,
-            ContractPeriodStart: this.state.startDate,
-            ContractPeriodEnd: this.state.endDate,
-            ContractDuration: this.state.dateduration,
-            CargoDescription: this.state.cargodescription,
-            ContractVolumePerYear: this.state.contractval,
-            PortPairsEstVolFreightRate: this.state.portpairs,
-            FreightPayment: this.state.freight,
-            OtherConditions: this.state.othercon,
-            ApplicableLaw: this.state.applaw,
-            VoyagePLContribution: this.state.voyage,
-            Background: this.state.background,
-            Others: this.state.addothers,
-            InterestedPartiesId: this.state.InterestedPartiesId,
-            BackgroundSupportingDocuments: this.state.bgdocuments,
-            VoyagePLContributionSupportingDo:this.state.vdocuments,
-            OthersSupportingDocuments:this.state.odocuments,
-            InterestedPartiesExt:this.state.interestedPartiesexternalstr,
-            BAF:this.state.baf
-
-}).then((iar)=>{ 
-
-  console.log('Item added',iar); });
-
-} catch (err) {
-console.error("Error creating item:", err);
-}
-
-           
-      
-  this.setState({ isSuccess: true });
+    //folderUrl =formconst.LIBRARYNAME + "/" + lastitemid    
+    folderUrl = formconst.LIBRARYNAME +"/" + this.state.customerlist + "/" + lastitemid
+    this.setState({title:lastitemid})
+    
+        
+   
+  }).then(async () => {
+    
+    await upload()
+    // Update the item
+    const updatedData = {
+      Title: this.state.title,
+      ApplicantId: this.state.ApplicantId,
+      RequestingOffice: this.state.ValueDropdown,
+      Customer: this.state.customerlist,
+      ContractPeriodStart: this.state.startDate,
+      ContractPeriodEnd: this.state.endDate,
+      ContractDuration: this.state.dateduration,
+      CargoDescription: this.state.cargodescription,
+      ContractVolumePerYear: this.state.contractval,
+      PortPairsEstVolFreightRate: this.state.portpairs,
+      FreightPayment: this.state.freight,
+      OtherConditions: this.state.othercon,
+      ApplicableLaw: this.state.applaw,
+      VoyagePLContribution: this.state.voyage,
+      Background: this.state.background,
+      Others: this.state.addothers,
+      InterestedPartiesId: this.state.users,
+      BackgroundSupportingDocuments: this.state.bgdocuments,
+      VoyagePLContributionSupportingDo:this.state.vdocuments,
+      OthersSupportingDocuments:this.state.odocuments,
+      InterestedPartiesExt:this.state.interestedPartiesexternalstr,
+      BAF:this.state.baf
+    };
+    return updateData(this.props,listId, updatedData);
+  })
+   .then(() => {
+    console.log('Item Updated successfully');
+    // Perform any further actions if needed
+    this.setState({ isSuccess: true });
   setTimeout(() => {this.setState({  
     title: "",  
     users: [], 
@@ -727,6 +647,131 @@ console.error("Error creating item:", err);
     newParty:""
    
   }); }, 3000);
+  }) 
+  .catch((error: any) => {
+    console.log('Error:', error);
+  });
+
+ 
+const upload = async () => {
+
+    console.log(folderUrl)
+    const _sp :SPFI = getSP(props.context) ;
+    let strbgurl = "";
+    let vstrbgurl = "";
+    let ostrbgurl = "";
+    _sp.web.folders.addUsingPath(folderUrl);
+    // bgfiles
+    
+    let bgfileurl = [];
+    const bgcategory = 'Background'
+    let bginput = document.getElementById("bgattachment") as HTMLInputElement;
+
+    console.log(bginput.files);
+  
+    if (bginput.files.length > 0) {
+      let bgfiles = bginput.files;
+    
+      for (var i = 0; i < bgfiles.length; i++) {
+        let bgfile = bginput.files[i];
+        console.log("bgfile",bgfile)
+        bgfileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" +bgfile.name);
+        console.log()
+        try {
+          let bguploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(bgfile.name, bgfile, (data) => {
+            console.log("File uploaded successfully");
+          });
+          let item = await bguploadedFile.file.getItem();
+          item.update({Category:bgcategory})
+
+
+        } catch (err) {
+          console.error("Error uploading file:", err);
+        }
+      }
+      let convertedStr = bgfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
+       strbgurl = convertedStr.toString();
+        console.log(strbgurl);
+        this.setState({ bgdocuments: strbgurl });
+    }
+      
+     else {
+      console.log("No file selected for upload.");
+    }
+    // vfiles
+    let vfileurl = [];
+    let vinput = document.getElementById("vattachment") as HTMLInputElement;
+    const vcategory = 'Voyage P/L Contribution'
+    console.log(vinput.files);
+    if (vinput.files.length > 0) {
+      let vfiles = vinput.files;
+    
+      for (var i = 0; i < vfiles.length; i++) {
+        let vfile = vinput.files[i];
+        console.log("vfile",vfile)
+        vfileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" + vfile.name);
+        try {
+          let vuploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(vfile.name, vfile, (data) => {
+            console.log("File uploaded successfully");
+          });
+          let item = await vuploadedFile.file.getItem();
+          item.update({Category:vcategory})
+        } catch (err) {
+          console.error("Error uploading file:", err);
+        }
+      }
+      let vconvertedStr = vfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
+     vstrbgurl = vconvertedStr.toString();
+    console.log(vstrbgurl);
+    this.setState({ vdocuments: vstrbgurl });
+    
+    } else {
+      console.log("No file selected for upload.");
+      
+    }
+    
+  
+    // ofiles
+    let ofileurl = [];
+    let oinput = document.getElementById("othersattachment") as HTMLInputElement;
+    const ocategory = 'Others'
+    console.log(oinput.files);
+   
+    if (oinput.files.length > 0) {
+      let ofiles = oinput.files;
+   
+      for (var i = 0; i < ofiles.length; i++) {
+        let ofile = oinput.files[i];
+        console.log("ofile",ofile)
+        ofileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" + ofile.name);
+        try {
+          let ouploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(ofile.name, ofile, (data) => {
+            console.log("File uploaded successfully");
+          });
+          let item = await ouploadedFile.file.getItem();
+          item.update({Category:ocategory})      
+          
+        } catch (err) {
+          console.error("Error uploading file:", err);
+        }
+      }
+      let oconvertedStr = ofileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
+       ostrbgurl = oconvertedStr.toString();
+      console.log(ostrbgurl);
+      this.setState({ odocuments: ostrbgurl });
+      
+    } else {
+      console.log("No file selected for upload.");
+      
+    }
+
+    
+   
+  }
+    
+    
+      
+  
 } 
 /* filterSuggestedTags = (filterText: string, tagList: ITag[]) => {
   return filterText
@@ -776,7 +821,7 @@ handleTagChange = (selectedTags: any) => {
             ensureUser={true}
             showtooltip={false}
             suggestionsLimit={5}
-            required={false}
+            required={true}
             disabled={false}
             onChange={this._getPeoplePickerItems}
             showHiddenInUI={false}
@@ -805,6 +850,7 @@ handleTagChange = (selectedTags: any) => {
           substringSearch={true}
           label="Customer"
           orderBy={"Id desc"}
+          
           itemLimit={1}
           enableDefaultSuggestions={true}
           onSelectedItem={this._oncustomerSelectedItem}
@@ -992,7 +1038,7 @@ handleTagChange = (selectedTags: any) => {
     <PeoplePicker
         context={this.props.context as any}
         titleText="Interested Parties (MOLEA)"
-        personSelectionLimit={5}
+        personSelectionLimit={10}
         groupName={""} 
         showtooltip={false}
         ensureUser={true}
