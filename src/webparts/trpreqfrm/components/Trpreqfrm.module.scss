@@ -1,7 +1,12 @@
 @import '~@fluentui/react/dist/sass/References.scss';
 
+
 .ql-toolbar  {
 	display: block !important;
+}
+
+.ql-tooltip {
+    display: block!important;
 }
 .stackContainer {
   display: flex;
@@ -85,6 +90,17 @@
 	& > span{
 		transform: rotate(45deg);
 	}
+}
+
+.requiredfield {
+    content: " *";
+    color: rgb(168, 0, 0);
+    padding-right: 12px;
+}
+
+.heading {
+	color: #015aaa;
+	font-size: 18px;
 }
 
 

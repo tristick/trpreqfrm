@@ -29,10 +29,10 @@ export const getCustomerItems= async (props:ITrpreqfrmProps):Promise<ICustomer[]
     console.log(customerName)
     const _sp :SPFI = getSP(props.context) ;
     return new Promise((resolve, reject) => {
-      _sp.web.lists.getByTitle(formconst.CUSTOMER_LISTNAME).items.select("Reference").filter(`Title eq '${customerName}'`)()
+      _sp.web.lists.getByTitle(formconst.CUSTOMER_LISTNAME).items.select("RefCode").filter(`Title eq '${customerName}'`)()
         .then((items) => {
           if (items.length > 0) {
-            const customerRef = items[0].Reference;
+            const customerRef = items[0].RefCode;
             console.log(customerRef)
             resolve(customerRef);
           } else {
@@ -91,10 +91,10 @@ export const getCustomerItems= async (props:ITrpreqfrmProps):Promise<ICustomer[]
     console.log(officeName)
     const _sp :SPFI = getSP(props.context) ;
     return new Promise((resolve, reject) => {
-      _sp.web.lists.getByTitle(formconst.REQUEST_LISTNAME).items.select("Reference").filter(`Title eq '${officeName}'`)()
+      _sp.web.lists.getByTitle(formconst.REQUEST_LISTNAME).items.select("RefCode").filter(`Title eq '${officeName}'`)()
         .then((items) => {
           if (items.length > 0) {
-            const officeRef = items[0].Reference;
+            const officeRef = items[0].RefCode;
             console.log(officeRef)
             resolve(officeRef);
           } else {

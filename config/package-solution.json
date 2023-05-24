@@ -1,7 +1,7 @@
 {
   "$schema": "https://developer.microsoft.com/json-schemas/spfx-build/package-solution.schema.json",
   "solution": {
-    "name": "TransportRequest-client-side-solution",
+    "name": "MOLACE-ContractRequestForm-Solution",
     "id": "4608043a-153b-4fe8-a469-e4a06c60a84a",
     "version": "1.0.0.0",
     "includeClientSideAssets": true,
@@ -35,6 +35,6 @@
     ]
   },
   "paths": {
-    "zippedPackage": "solution/TransportRequest.sppkg"
+    "zippedPackage": "solution/MOLACEContractRequestForm.sppkg"
   }
 }

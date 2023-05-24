@@ -14,6 +14,7 @@ export interface ICustomer {
 
   Title:string;
   Reference:string;
+  RefCode:string;
 }
 
 export interface ITrc {

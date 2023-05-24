@@ -111,8 +111,11 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       usersstr:"",
       partyusers: [],
       ApplicantId:0,
+      selectedApplicant: "default",
       ValueDropdown:"",
+      selectedOffice: null,
       customerlist:"",
+      selectedCustomer: null,
       startDate:new Date(),
       endDate:new Date(),
       dateduration:"0",
@@ -140,7 +143,8 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       interestedPartiesexternalstr:"",
       newParty: "",
       selectedTags: [],
-      baf:""
+      baf:"",
+      onload:true
       
      
       
@@ -183,13 +187,13 @@ fetchCustomerItems = async () => {
   try {
     const customerItems: ICustomer[] = await getCustomerItems(this.props);
     console.log('Fetched customer items:', customerItems);
-     customerItems.forEach((customerItem) => {
-    const TitleValue = customerItem.Title; 
-    const ReferenceValue = customerItem.Reference; 
-    console.log('Title Value:', TitleValue);
-    console.log('Reference Value:', ReferenceValue);
+     /* //customerItems.forEach((customerItem) => {
+    //const TitleValue = customerItem.Title; 
+    //const ReferenceValue = customerItem.Reference; 
+    //console.log('Title Value:', TitleValue);
+    //console.log('Reference Value:', ReferenceValue);
     
-  });
+  }); */
   } catch (error) {
     console.error('Error fetching customer items:', error);
   }
@@ -201,6 +205,10 @@ fetchCustomerItems = async () => {
   let userid =items[0].id
     this.setState({ ApplicantId: userid });
     console.log('Items new:', userid );
+    const selectedApplicant = items.length > 0 ? items[0] : null;
+  this.setState({ selectedApplicant }, () => {
+    this.validateApplicantField();
+  });
     /* let getSelectedUsers = [];  
     for (let item in items) {  
       getSelectedUsers.push(items[item].id);  
@@ -214,6 +222,12 @@ fetchCustomerItems = async () => {
     console.log('users:',selectedUsers)  */
     
   } 
+  validateApplicantField = () => {
+    if (!this.state.selectedApplicant) {
+      return "Applicant field is required";
+    }
+    return "";
+  }
   public _getPartiesPeoplePickerItems=(items: any[]) =>{  
    console.log(items)
     /* let userid =items[0].id
@@ -238,8 +252,14 @@ fetchCustomerItems = async () => {
   } */
   private _oncustomerSelectedItem=(data: { key: string; name: string }[])=> {
     
-    if(data.length>0){
+   
     this.setState({customerlist:data[0].name as string})
+
+    const selectedCustomer = data.length >0 ? data[0].name : null;
+    this.setState({ selectedCustomer }, () => {
+      this.validateCustomerField();
+    });
+    
     getCustomerRef(this.props,data[0].name).then((customerRef: string)=>{
 
       customerreference = customerRef
@@ -247,10 +267,33 @@ fetchCustomerItems = async () => {
       
     })
 
-    }else{
-      this.setState({customerlist:"No Country Selected"})
+    
+    
+  }
+
+  validateCustomerField = () => {
+    if (!this.state.selectedCustomer) {
+      return "Customer field is required";
     }
-    console.log("mydata",data);
+    return "";
+  }
+
+
+  private _onofficeSelectedItem=(data: { key: string; name: string }[])=> {
+    
+    
+    this.setState({ValueDropdown:data[0].name as string})
+    const selectedOffice = data.length > 0 ? data[0].name : null;
+    this.setState({ selectedOffice }, () => {
+      this.validateOfficeField();
+    });
+    getOfficeRef(this.props,data[0].name).then((officeRef: string)=>{
+
+      officereference = officeRef
+      console.log(officereference);
+      
+    })
+    
     /* let getCountry = [];  
 
     for (let item in data) {
@@ -261,29 +304,11 @@ fetchCustomerItems = async () => {
     console.log(strcountry) */
   }
 
-
-  private _onofficeSelectedItem=(data: { key: string; name: string }[])=> {
-    
-    if(data.length>0){
-    this.setState({ValueDropdown:data[0].name as string})
-    getOfficeRef(this.props,data[0].name).then((officeRef: string)=>{
-
-      officereference = officeRef
-      console.log(officereference);
-      
-    })
-    }else{
-      this.setState({ValueDropdown:"No Office Selected"})
+  validateOfficeField = () => {
+    if (!this.state.selectedOffice) {
+      return "Request Office field is required";
     }
-    console.log("mydata",data);
-    /* let getCountry = [];  
-
-    for (let item in data) {
-      getCountry.push(data[item].name); 
-    }
-    let strcountry:string = getCountry.toString();
-    this.setState({customerlist:strcountry})
-    console.log(strcountry) */
+    return "";
   }
   private _onchangedStartDate=(stdate: any): void =>{  
     this.setState({ startDate: stdate }); 
@@ -535,9 +560,33 @@ handleAddParty = () => {
      
      // const _sp :SPFI = getSP(this.props.context ) ;
       let folderUrl: string;
+      const applicantValidationMessage = this.validateApplicantField();
+      if (applicantValidationMessage) {
+        // Handle the validation error, e.g., display an error message
+        console.log(applicantValidationMessage);
+        return;
+      }
+
+      const customerValidationMessage = this.validateCustomerField();
+      if (customerValidationMessage) {
+        
+        console.log(customerValidationMessage);
+        return;
+      }
+
+      const officeValidationMessage = this.validateOfficeField();
+      if (officeValidationMessage) {
+        
+        console.log(officeValidationMessage);
+        return;
+      }
+  
       if (!this.state.iscontractvalValid) {
         return;
       }
+
+      
+
       let listFolderpath=formconst.WEB_URL+"/Lists/"+ formconst.LISTNAME+"/" +this.state.customerlist; 
 
      // console.log(listFolderpath);
@@ -682,9 +731,10 @@ const upload = async () => {
             console.log("File uploaded successfully");
           });
           let item = await bguploadedFile.file.getItem();
-          item.update({Category:bgcategory})
+          await item.update({Section:bgcategory});
+          await item.update({RequestID:this.state.title})
 
-
+            
         } catch (err) {
           console.error("Error uploading file:", err);
         }
@@ -715,7 +765,8 @@ const upload = async () => {
             console.log("File uploaded successfully");
           });
           let item = await vuploadedFile.file.getItem();
-          item.update({Category:vcategory})
+          await item.update({Section:vcategory});
+          await item.update({RequestID:this.state.title})
         } catch (err) {
           console.error("Error uploading file:", err);
         }
@@ -749,7 +800,9 @@ const upload = async () => {
             console.log("File uploaded successfully");
           });
           let item = await ouploadedFile.file.getItem();
-          item.update({Category:ocategory})      
+          await item.update({Section:ocategory});
+          await item.update({RequestID:this.state.title}) ;
+             
           
         } catch (err) {
           console.error("Error uploading file:", err);
@@ -796,11 +849,19 @@ handleTagChange = (selectedTags: any) => {
     let curruser:any = this.props.userDisplayName;
     const {interestedPartiesexternal } = this.state;
     const successMessage: JSX.Element | null = this.state.isSuccess ?
-    <MessageBar messageBarType={MessageBarType.success}>Form submitted successfully.</MessageBar>
+    <MessageBar messageBarType={MessageBarType.success}>Request Id : {this.state.title} submitted successfully.</MessageBar>
     : null;
     
     const textFieldErrorMessage: JSX.Element | null = !this.state.iscontractvalValid ?
       <MessageBar messageBarType={MessageBarType.error}>Please enter a valid number.</MessageBar>
+      : null;
+
+      const customerFieldErrorMessage: JSX.Element | null = !this.state.selectedCustomer ?
+      <MessageBar messageBarType={MessageBarType.error}>Customer field is required.</MessageBar>
+      : null;
+
+      const OfficeFieldErrorMessage: JSX.Element | null = !this.state.selectedOffice ?
+      <MessageBar messageBarType={MessageBarType.error}>Office field is required.</MessageBar>
       : null;
     return (
     
@@ -808,7 +869,7 @@ handleTagChange = (selectedTags: any) => {
    
    
         <div>
-          <h3>Outline of the Agreement</h3>
+          <h3 className={styles.heading}>Outline of the Agreement</h3>
           <div>
     </div>
         <PeoplePicker
@@ -856,7 +917,7 @@ handleTagChange = (selectedTags: any) => {
           onSelectedItem={this._oncustomerSelectedItem}
           noResultsFoundText="No Country Found"
           defaultSelectedItems = {[]}
-                     />
+                     />{customerFieldErrorMessage}
     
     <ListItemPicker listId={formconst.REPORTING_OFFICE_LIST_ID}
        context={this.props.context as any}
@@ -871,7 +932,8 @@ handleTagChange = (selectedTags: any) => {
           onSelectedItem={this._onofficeSelectedItem}
           noResultsFoundText="No office Found"
           defaultSelectedItems = {[]}
-                     />
+         
+                     />{OfficeFieldErrorMessage}
    
       <Stack horizontal>
       <DateTimePicker 
@@ -1073,8 +1135,10 @@ handleTagChange = (selectedTags: any) => {
     <Stack horizontal horizontalAlign='end' className={styles.stackContainer}>     
     <PrimaryButton text="Submit" onClick={() => this._createItem(this.props)} />
     <PrimaryButton text="Cancel"  />
-    {successMessage}
+   
     </Stack> 
+    
+    {successMessage}
         </div>
       </section>
     );

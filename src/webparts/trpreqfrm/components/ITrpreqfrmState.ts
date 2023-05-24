@@ -3,11 +3,14 @@
 export interface ITrpreqfrmState {  
     title: string;  
     users: string []; 
+    selectedApplicant: any,
     usersstr:string
     partyusers:number[];
     ApplicantId:any;
     ValueDropdown:string ;
+    selectedOffice: any,
     customerlist:string;
+    selectedCustomer: any,
     startDate:Date;
     endDate:Date;
     dateduration:any;
@@ -33,9 +36,11 @@ export interface ITrpreqfrmState {
     odocuments:string;
     interestedPartiesexternal: string[],
     interestedPartiesexternalstr:string,
-      newParty: string
-      selectedTags: any[]
-      baf:string
+    newParty: string
+    selectedTags: any[]
+    baf:string
+    onload:boolean
+
     
       
    
