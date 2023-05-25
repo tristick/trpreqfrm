@@ -252,8 +252,11 @@ fetchCustomerItems = async () => {
   } */
   private _oncustomerSelectedItem=(data: { key: string; name: string }[])=> {
     
-   
+   if(data[0].name == null){
+    this.setState({customerlist:""})
+  }else{
     this.setState({customerlist:data[0].name as string})
+   }
 
     const selectedCustomer = data.length >0 ? data[0].name : null;
     this.setState({ selectedCustomer }, () => {
@@ -281,8 +284,11 @@ fetchCustomerItems = async () => {
 
   private _onofficeSelectedItem=(data: { key: string; name: string }[])=> {
     
-    
+    if(data[0].name == null){
+      this.setState({customerlist:""})
+    }else{
     this.setState({ValueDropdown:data[0].name as string})
+    }
     const selectedOffice = data.length > 0 ? data[0].name : null;
     this.setState({ selectedOffice }, () => {
       this.validateOfficeField();
@@ -955,11 +961,11 @@ handleTagChange = (selectedTags: any) => {
     </Stack>  
 
       {/* <TextField label="Contract Duration" value={this.state.dateduration} onChange={this._onchangedduration}/> */}
-      <div><p>Contract Duration (Days)</p></div>
+       <p className={styles.formlabel}>Contract Duration (Days)</p>
       <Label>{this.state.dateduration}</Label>
 
       {/* <RichText label="Cargo Description" value={this.state.cargodescription}  onChange={(text)=>this.oncargodescTextChange(text)} isEditMode ={true}/> */}
-      <div><p>Cargo Description</p></div>
+      <p className={styles.formlabel}>Cargo Description</p>
       <ReactQuill theme='snow'
     
       modules={formconst.modules}    
@@ -970,7 +976,7 @@ handleTagChange = (selectedTags: any) => {
       <TextField label="Contract Volume Per Year" value={this.state.contractval} onChange={this._onccontractval} errorMessage={textFieldErrorMessage?.props.messageBarType === MessageBarType.error ? textFieldErrorMessage.props.children : undefined} /> 
      
       {/* <RichText label="Port Pairs, Estimate Volume & Freight Rate" value={this.state.portpairs}  onChange={(text)=>this.onportpairsTextChange(text)}/>  */}
-      <div><p>Port Pairs, Estimate Volume & Freight Rate</p></div>
+      <p className={styles.formlabel}>Port Pairs, Estimate Volume & Freight Rate</p>
       <ReactQuill theme='snow'
       modules={formconst.modules}    
       formats={formconst.formats}   
@@ -982,7 +988,7 @@ handleTagChange = (selectedTags: any) => {
 {/*       <RichText label="Other Conditions" value={this.state.othercon}  onChange={(text)=>this.ontherconTextChange(text)}/>
  
  */}     
- <div><p>Other Conditions</p></div>
+ <p className={styles.formlabel}>Other Conditions</p>
   <ReactQuill theme='snow'
       modules={formconst.modules}    
       formats={formconst.formats}   
@@ -992,7 +998,7 @@ handleTagChange = (selectedTags: any) => {
     
 {/*       <RichText label="Applicable Law" value={this.state.applaw}  onChange={(text)=>this.onapplawTextChange(text)}/> <br/>
  */} 
- <div><p>Applicable Law</p></div>
+ <p className={styles.formlabel}>Applicable Law</p>
       <ReactQuill theme='snow'
       modules={formconst.modules}    
       formats={formconst.formats}   
@@ -1003,9 +1009,9 @@ handleTagChange = (selectedTags: any) => {
 
       </div>
       <div>
-      <h3>Additional Information</h3>
+      <br /><p className={styles.formlabel}>Additional Information</p> <br />
       {/* <RichText label="Background" value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)}/> */}
-      <div><p>Background</p></div>
+      <p className={styles.formlabel}>Background</p>
       <ReactQuill theme='snow'
       modules={formconst.modules}    
       formats={formconst.formats}    
@@ -1035,7 +1041,7 @@ handleTagChange = (selectedTags: any) => {
       </div>
       
       {/* <RichText label="Voyage P/L Contribution" value={this.state.voyage}  onChange={(text)=>this.onvoyageTextChange(text)}/>  */}
-      <div><p>Voyage P/L Contribution</p></div>
+      <p className={styles.formlabel}>Voyage P/L Contribution</p>
       <ReactQuill theme='snow'
       modules={formconst.modules}    
       formats={formconst.formats}  
@@ -1066,7 +1072,7 @@ handleTagChange = (selectedTags: any) => {
         </p>
       </div>
     {/* <RichText label="Others" value={this.state.addothers}  onChange={(text)=>this.onaddothersTextChange(text)}/>  */}
-    <div><p>Others</p></div>
+    <p className={styles.formlabel}>Others</p>
     <ReactQuill theme='snow'
       modules={formconst.modules}    
       formats={formconst.formats}    

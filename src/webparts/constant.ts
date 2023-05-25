@@ -1,10 +1,10 @@
-/* export const REQUEST_LISTNAME ="Requesting Office";
+export const REQUEST_LISTNAME ="Requesting Office";
 export const LISTNAME ="Transport Contract Request";
 export const CUSTOMER_LISTNAME ="Customers";
 export const CUSTOMER_LIST_ID ="08e832c7-921f-4e0c-a57a-1377f87cc596";
 export const REPORTING_OFFICE_LIST_ID ="e530e316-4ff9-428c-ab1e-5c1b38154ddd";
 export const LIBRARYNAME = "Shared Documents";
-export const WEB_URL= "https://k6931.sharepoint.com/sites/Rupankana"; */
+export const WEB_URL= "https://k6931.sharepoint.com/sites/Rupankana"; 
 
 /* export const LISTNAME ="Requests";
 export const REQUEST_LISTNAME ="Requesting Office";
@@ -14,13 +14,13 @@ export const REPORTING_OFFICE_LIST_ID ="0a927011-6e17-4696-8fdd-12fbbc0f7481";
 export const LIBRARYNAME = "Request Supporting Files";
 export const WEB_URL= "https://kwel.sharepoint.com/sites/ACE-TransportationContractRequests"; */
 
-export const LISTNAME ="Requests";
+/* export const LISTNAME ="Requests";
 export const REQUEST_LISTNAME ="Requesting Office";
 export const CUSTOMER_LISTNAME ="Customers";
 export const CUSTOMER_LIST_ID ="c032906e-cd79-4daf-99c5-9512e6419907";
 export const REPORTING_OFFICE_LIST_ID ="229f24eb-ce32-4c11-885f-14689fc6fbe7";
 export const LIBRARYNAME = "Shared Documents";
-export const WEB_URL= "https://sonlinehub.sharepoint.com/sites/mySPFx";
+export const WEB_URL= "https://sonlinehub.sharepoint.com/sites/mySPFx"; */
 
 
 export const modules = {  
