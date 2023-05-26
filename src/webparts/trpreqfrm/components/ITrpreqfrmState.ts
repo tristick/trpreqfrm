@@ -3,14 +3,15 @@
 export interface ITrpreqfrmState {  
     title: string;  
     users: string []; 
-    selectedApplicant: any,
+    //selectedApplicant: any,
     usersstr:string
     partyusers:number[];
     ApplicantId:any;
     ValueDropdown:string ;
-    selectedOffice: any,
+    //selectedOffice: any,
     customerlist:string;
-    selectedCustomer: any,
+    //selectedCustomer: any,
+    //isselectedCustomer:boolean,
     startDate:Date;
     endDate:Date;
     dateduration:any;

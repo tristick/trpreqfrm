@@ -85,6 +85,9 @@ const textFieldStyles: Partial<ITextFieldStyles> = {
   let listId: number;
   let customerreference:string;
   let officereference:string;
+  let isselectedApplicant:boolean = true ;
+  let isselectedCustomer:boolean = false ;
+  let isselectedOffice:boolean = false ;
 
 
 export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqfrmState> {
@@ -111,11 +114,12 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       usersstr:"",
       partyusers: [],
       ApplicantId:0,
-      selectedApplicant: "default",
+      //selectedApplicant: "default",
       ValueDropdown:"",
-      selectedOffice: null,
+      //selectedOffice: null,
       customerlist:"",
-      selectedCustomer: null,
+      //selectedCustomer: null,
+      //isselectedCustomer: true,
       startDate:new Date(),
       endDate:new Date(),
       dateduration:"0",
@@ -202,13 +206,19 @@ fetchCustomerItems = async () => {
 
   public _getPeoplePickerItems=(items: any[]) =>{  
   
-  let userid =items[0].id
-    this.setState({ ApplicantId: userid });
-    console.log('Items new:', userid );
-    const selectedApplicant = items.length > 0 ? items[0] : null;
-  this.setState({ selectedApplicant }, () => {
-    this.validateApplicantField();
-  });
+    if(items.length> 0){
+      let userid =items[0].id
+      this.setState({ ApplicantId: userid });
+      isselectedApplicant  = true;
+      //console.log('Items new:', userid );
+    }else{
+      this.setState({ ApplicantId: "" });
+      isselectedApplicant  = false;
+
+    }
+
+    
+  
     /* let getSelectedUsers = [];  
     for (let item in items) {  
       getSelectedUsers.push(items[item].id);  
@@ -222,12 +232,7 @@ fetchCustomerItems = async () => {
     console.log('users:',selectedUsers)  */
     
   } 
-  validateApplicantField = () => {
-    if (!this.state.selectedApplicant) {
-      return "Applicant field is required";
-    }
-    return "";
-  }
+ 
   public _getPartiesPeoplePickerItems=(items: any[]) =>{  
    console.log(items)
     /* let userid =items[0].id
@@ -251,71 +256,44 @@ fetchCustomerItems = async () => {
     this.setState({ ValueDropdown: item.key as string});
   } */
   private _oncustomerSelectedItem=(data: { key: string; name: string }[])=> {
-    
-   if(data[0].name == null){
+
+   if(data.length == 0){
     this.setState({customerlist:""})
   }else{
     this.setState({customerlist:data[0].name as string})
-   }
-
-    const selectedCustomer = data.length >0 ? data[0].name : null;
-    this.setState({ selectedCustomer }, () => {
-      this.validateCustomerField();
-    });
-    
     getCustomerRef(this.props,data[0].name).then((customerRef: string)=>{
 
       customerreference = customerRef
-      console.log(customerRef);
+      //console.log(customerRef);
       
     })
+   }
 
-    
-    
+     isselectedCustomer = data.length >0 ? true : false;
+  
   }
 
-  validateCustomerField = () => {
-    if (!this.state.selectedCustomer) {
-      return "Customer field is required";
-    }
-    return "";
-  }
 
 
   private _onofficeSelectedItem=(data: { key: string; name: string }[])=> {
     
-    if(data[0].name == null){
-      this.setState({customerlist:""})
+    if(data.length == 0 ){
+      this.setState({ValueDropdown:""})
     }else{
     this.setState({ValueDropdown:data[0].name as string})
-    }
-    const selectedOffice = data.length > 0 ? data[0].name : null;
-    this.setState({ selectedOffice }, () => {
-      this.validateOfficeField();
-    });
     getOfficeRef(this.props,data[0].name).then((officeRef: string)=>{
 
       officereference = officeRef
       console.log(officereference);
       
     })
+    }
+
+   isselectedOffice = data.length > 0 ? true : false;
     
-    /* let getCountry = [];  
 
-    for (let item in data) {
-      getCountry.push(data[item].name); 
-    }
-    let strcountry:string = getCountry.toString();
-    this.setState({customerlist:strcountry})
-    console.log(strcountry) */
   }
 
-  validateOfficeField = () => {
-    if (!this.state.selectedOffice) {
-      return "Request Office field is required";
-    }
-    return "";
-  }
   private _onchangedStartDate=(stdate: any): void =>{  
     this.setState({ startDate: stdate }); 
 
@@ -566,22 +544,28 @@ handleAddParty = () => {
      
      // const _sp :SPFI = getSP(this.props.context ) ;
       let folderUrl: string;
-      const applicantValidationMessage = this.validateApplicantField();
-      if (applicantValidationMessage) {
+     
+      if (!isselectedApplicant) {
         // Handle the validation error, e.g., display an error message
-        console.log(applicantValidationMessage);
+      
         return;
       }
 
-      const customerValidationMessage = this.validateCustomerField();
-      if (customerValidationMessage) {
+      
+      if (!isselectedCustomer) {
         
-        console.log(customerValidationMessage);
+        //console.log(customerValidationMessage);
         return;
       }
 
-      const officeValidationMessage = this.validateOfficeField();
-      if (officeValidationMessage) {
+      if (!isselectedOffice) {
+        
+        //console.log(customerValidationMessage);
+        return;
+      }
+
+      /* const officeValidationMessage = this.validateOfficeField();
+      if (!officeValidationMessage) {
         
         console.log(officeValidationMessage);
         return;
@@ -590,7 +574,7 @@ handleAddParty = () => {
       if (!this.state.iscontractvalValid) {
         return;
       }
-
+ */
       
 
       let listFolderpath=formconst.WEB_URL+"/Lists/"+ formconst.LISTNAME+"/" +this.state.customerlist; 
@@ -629,7 +613,7 @@ handleAddParty = () => {
       let lastitemid = (listIdstr)+"-"+customerreference+"-"+officereference +"-" +formattedDate.toString();
 
      
-      console.log(lastitemid)
+     // console.log(lastitemid)
     
       
     //folderUrl =formconst.LIBRARYNAME + "/" + lastitemid    
@@ -669,7 +653,7 @@ handleAddParty = () => {
     return updateData(this.props,listId, updatedData);
   })
    .then(() => {
-    console.log('Item Updated successfully');
+    //console.log('Item Updated successfully');
     // Perform any further actions if needed
     this.setState({ isSuccess: true });
   setTimeout(() => {this.setState({  
@@ -731,7 +715,7 @@ const upload = async () => {
         let bgfile = bginput.files[i];
         console.log("bgfile",bgfile)
         bgfileurl.push(formconst.WEB_URL + "/" + folderUrl + "/" +bgfile.name);
-        console.log()
+        //console.log()
         try {
           let bguploadedFile = await _sp.web.getFolderByServerRelativePath(folderUrl).files.addChunked(bgfile.name, bgfile, (data) => {
             console.log("File uploaded successfully");
@@ -747,7 +731,7 @@ const upload = async () => {
       }
       let convertedStr = bgfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
        strbgurl = convertedStr.toString();
-        console.log(strbgurl);
+        //console.log(strbgurl);
         this.setState({ bgdocuments: strbgurl });
     }
       
@@ -779,7 +763,7 @@ const upload = async () => {
       }
       let vconvertedStr = vfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
      vstrbgurl = vconvertedStr.toString();
-    console.log(vstrbgurl);
+    //console.log(vstrbgurl);
     this.setState({ vdocuments: vstrbgurl });
     
     } else {
@@ -816,7 +800,7 @@ const upload = async () => {
       }
       let oconvertedStr = ofileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
        ostrbgurl = oconvertedStr.toString();
-      console.log(ostrbgurl);
+      //console.log(ostrbgurl);
       this.setState({ odocuments: ostrbgurl });
       
     } else {
@@ -854,6 +838,8 @@ handleTagChange = (selectedTags: any) => {
    
     let curruser:any = this.props.userDisplayName;
     const {interestedPartiesexternal } = this.state;
+
+
     const successMessage: JSX.Element | null = this.state.isSuccess ?
     <MessageBar messageBarType={MessageBarType.success}>Request Id : {this.state.title} submitted successfully.</MessageBar>
     : null;
@@ -862,11 +848,15 @@ handleTagChange = (selectedTags: any) => {
       <MessageBar messageBarType={MessageBarType.error}>Please enter a valid number.</MessageBar>
       : null;
 
-      const customerFieldErrorMessage: JSX.Element | null = !this.state.selectedCustomer ?
+      const applicantFieldErrorMessage: JSX.Element | null = !isselectedApplicant ?
+      <MessageBar messageBarType={MessageBarType.error}>Applicant field is required.</MessageBar>
+      : null;
+
+      const customerFieldErrorMessage: JSX.Element | null = !isselectedCustomer ?
       <MessageBar messageBarType={MessageBarType.error}>Customer field is required.</MessageBar>
       : null;
 
-      const OfficeFieldErrorMessage: JSX.Element | null = !this.state.selectedOffice ?
+      const OfficeFieldErrorMessage: JSX.Element | null = !isselectedOffice ?
       <MessageBar messageBarType={MessageBarType.error}>Office field is required.</MessageBar>
       : null;
     return (
@@ -894,7 +884,7 @@ handleTagChange = (selectedTags: any) => {
             showHiddenInUI={false}
             principalTypes={[PrincipalType.User]}
             resolveDelay={1000}
-    />
+    /> {applicantFieldErrorMessage}
      {/*  <label htmlFor={this.pickerId}>Choose a color</label>
         <TagPicker
           removeButtonAriaLabel="Remove"
@@ -929,7 +919,7 @@ handleTagChange = (selectedTags: any) => {
        context={this.props.context as any}
           columnInternalName='Title'
           keyColumnInternalName='Id'
-          placeholder="Select"
+          placeholder="Select your office"
           substringSearch={true}
           label="Requesting Office"
           orderBy={"Id desc"}
