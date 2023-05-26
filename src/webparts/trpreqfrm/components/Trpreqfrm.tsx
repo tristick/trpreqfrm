@@ -955,7 +955,7 @@ handleTagChange = (selectedTags: any) => {
          
                      />{OfficeFieldErrorMessage}
    
-      <div className={styles['textField-202']}>
+      <div>
       <DateTimePicker 
     
       label="Contract From"
