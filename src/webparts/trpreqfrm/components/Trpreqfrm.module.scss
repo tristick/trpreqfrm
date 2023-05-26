@@ -16,12 +16,20 @@
 
 .extpartiesstackContainer {
 	display: flex;
+  flex-direction: row;
 	width: '300px';
 	gap: 10px; /* Adjust the value to set the desired gap */
   }
 
- 
+ .textField-202{
+   display: flex;
+    flex-direction: row;
+    gap: 50px; /* Adjust the value to set the desired gap */
+    width:270px;
+    }
+  
 
+   
 .stackContainer .ms-Button {
   margin-left: 8px;
 }
@@ -95,10 +103,10 @@
 	}
 }
 
-.requiredfield {
-    content: " *";
+.required{
+   
     color: rgb(168, 0, 0);
-    padding-right: 12px;
+   
 }
 
 .heading {

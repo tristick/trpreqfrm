@@ -19,7 +19,7 @@ import "@pnp/sp/site-users/web";
 import "@pnp/sp/items";
 import { TextField } from '@fluentui/react/lib/TextField';
 import { PrimaryButton } from '@fluentui/react';
-import { IStyleFunctionOrObject, ITextFieldStyleProps, ITextFieldStyles, Label, MessageBar, MessageBarType, Stack, getId } from 'office-ui-fabric-react';
+import { IStyleFunctionOrObject, ITextFieldStyleProps, ITextFieldStyles, IconButton, Label, MessageBar, MessageBarType, Stack, getId } from 'office-ui-fabric-react';
 import { ListItemPicker} from '@pnp/spfx-controls-react';
 import * as ReactDOM from 'react-dom';
 import "@pnp/sp/folders";
@@ -86,8 +86,9 @@ const textFieldStyles: Partial<ITextFieldStyles> = {
   let customerreference:string;
   let officereference:string;
   let isselectedApplicant:boolean = true ;
-  let isselectedCustomer:boolean = false ;
-  let isselectedOffice:boolean = false ;
+  let isselectedCustomer:boolean = true ;
+  let isselectedOffice:boolean = true ;
+  let isemailInvalid:boolean = false;
 
 
 export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqfrmState> {
@@ -382,6 +383,12 @@ handleAddParty = () => {
     console.log(updatedParties)
 
     this.setState({ interestedPartiesexternal: updatedParties, newParty: '', interestedPartiesexternalstr:(JSON.stringify(updatedParties)).slice(1, -1).replace(/"/g, '')});
+    isemailInvalid = false;
+  } else{
+
+    isemailInvalid = true;
+    this.setState({newParty:""})
+
   }
   //console.log(interestedPartiesexternal.toString())
 };
@@ -551,19 +558,31 @@ handleAddParty = () => {
         return;
       }
 
+      if ((this.state.customerlist).length == 0) {
+        
+        isselectedCustomer = false;
+       this.setState({customerlist:""})
+        //console.log(customerValidationMessage);
+        return;
+      }
+
       
-      if (!isselectedCustomer) {
+      if ((this.state.ValueDropdown).length == 0) {
         
+        isselectedOffice = false;
+       this.setState({ValueDropdown:""})
         //console.log(customerValidationMessage);
         return;
       }
 
-      if (!isselectedOffice) {
+      if (isemailInvalid) {
         
+      
         //console.log(customerValidationMessage);
         return;
       }
 
+      
       /* const officeValidationMessage = this.validateOfficeField();
       if (!officeValidationMessage) {
         
@@ -859,6 +878,10 @@ handleTagChange = (selectedTags: any) => {
       const OfficeFieldErrorMessage: JSX.Element | null = !isselectedOffice ?
       <MessageBar messageBarType={MessageBarType.error}>Office field is required.</MessageBar>
       : null;
+
+      const EmailFieldErrorMessage: JSX.Element | null = isemailInvalid ?
+      <MessageBar messageBarType={MessageBarType.error}>Please enter a valid email address.</MessageBar>
+      : null;
     return (
     
     <section>
@@ -899,13 +922,14 @@ handleTagChange = (selectedTags: any) => {
           onChange={this.handleTagChange}
         />
       */}
+      <p className={styles.formlabel}>Customer<span className={styles.required}> *</span></p>
       <ListItemPicker listId={formconst.CUSTOMER_LIST_ID}
        context={this.props.context as any}
           columnInternalName='Title'
           keyColumnInternalName='Id'
           placeholder="Select your customer"
           substringSearch={true}
-          label="Customer"
+          //label="Customer *"
           orderBy={"Id desc"}
           
           itemLimit={1}
@@ -914,14 +938,14 @@ handleTagChange = (selectedTags: any) => {
           noResultsFoundText="No Country Found"
           defaultSelectedItems = {[]}
                      />{customerFieldErrorMessage}
-    
+    <p className={styles.formlabel}>Requesting Office<span className={styles.required}> *</span></p>
     <ListItemPicker listId={formconst.REPORTING_OFFICE_LIST_ID}
        context={this.props.context as any}
           columnInternalName='Title'
           keyColumnInternalName='Id'
           placeholder="Select your office"
           substringSearch={true}
-          label="Requesting Office"
+          //label="Requesting Office"
           orderBy={"Id desc"}
           itemLimit={1}
           enableDefaultSuggestions={true}
@@ -931,24 +955,28 @@ handleTagChange = (selectedTags: any) => {
          
                      />{OfficeFieldErrorMessage}
    
-      <Stack horizontal>
+      <div className={styles['textField-202']}>
       <DateTimePicker 
     
-      label="From"
+      label="Contract From"
       maxDate={this.state.endDate}
             dateConvention={DateConvention.Date}
             value={this.state.startDate}  
             onChange={this._onchangedStartDate} 
+            allowTextInput = {false}
+            showLabels = {false}
           
             />
                 
            
-    <DateTimePicker label="To"
+    <DateTimePicker label="Contract To"
     minDate={this.state.startDate}
           dateConvention={DateConvention.Date}
           value={this.state.endDate}  
-          onChange={this._onchangedEndDate}  />
-    </Stack>  
+          onChange={this._onchangedEndDate}
+          allowTextInput = {false}  
+          showLabels = {false}/>
+    </div>  
 
       {/* <TextField label="Contract Duration" value={this.state.dateduration} onChange={this._onchangedduration}/> */}
        <p className={styles.formlabel}>Contract Duration (Days)</p>
@@ -1107,27 +1135,30 @@ handleTagChange = (selectedTags: any) => {
         principalTypes={[PrincipalType.User]}
         resolveDelay={1000} />                  
     <br/>
-    <Stack horizontal verticalAlign="end" className={styles.extpartiesstackContainer }>
+    <div className={styles.extpartiesstackContainer }>
           <TextField
             label="Interested Parties (External)"
             value={this.state.newParty}
             styles={textFieldStyles as IStyleFunctionOrObject<ITextFieldStyleProps, ITextFieldStyles>}
             onChange={this._newparty}
-            onGetErrorMessage={(value) => {
+           /*  onGetErrorMessage={(value) => {
               if (value && !/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/.test(value)) {
                 return 'Please enter a valid email address';
               }
               return '';
-            }}
+            }} */
           />
-          <PrimaryButton text="+" onClick={this.handleAddParty} />
-        </Stack>
+{/*           <PrimaryButton text="+" onClick={this.handleAddParty} />
+ */}          <IconButton onClick= { this.handleAddParty } iconProps={ { iconName: 'Add' } } title='Add Party' />
+        </div>
+    
         <div>
           {interestedPartiesexternal.map((party: any, index: React.Key) => (
             <span key={index}>{party}{index !== interestedPartiesexternal.length - 1 && '; '}</span>
           ))}
-        </div>
+        </div>    
         <br/>
+        {EmailFieldErrorMessage}
     <Stack horizontal horizontalAlign='end' className={styles.stackContainer}>     
     <PrimaryButton text="Submit" onClick={() => this._createItem(this.props)} />
     <PrimaryButton text="Cancel"  />
