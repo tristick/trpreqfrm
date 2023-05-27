@@ -89,6 +89,8 @@ const textFieldStyles: Partial<ITextFieldStyles> = {
   let isselectedCustomer:boolean = true ;
   let isselectedOffice:boolean = true ;
   let isemailInvalid:boolean = false;
+  let isbuttondisbled : boolean = false;
+  let buttontext : string = "Submit"
 
 
 export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqfrmState> {
@@ -548,6 +550,8 @@ handleAddParty = () => {
   };
     private _createItem  =async (props:ITrpreqfrmProps):Promise<void>=>{
 
+      isbuttondisbled = true;
+      buttontext = "Saving..."
      
      // const _sp :SPFI = getSP(this.props.context ) ;
       let folderUrl: string;
@@ -674,6 +678,9 @@ handleAddParty = () => {
    .then(() => {
     //console.log('Item Updated successfully');
     // Perform any further actions if needed
+    
+    isbuttondisbled = false;
+    buttontext = "Submit"
     this.setState({ isSuccess: true });
   setTimeout(() => {this.setState({  
     title: "",  
@@ -1160,7 +1167,7 @@ handleTagChange = (selectedTags: any) => {
         <br/>
         {EmailFieldErrorMessage}
     <Stack horizontal horizontalAlign='end' className={styles.stackContainer}>     
-    <PrimaryButton text="Submit" onClick={() => this._createItem(this.props)} />
+    <PrimaryButton text={buttontext} onClick={() => this._createItem(this.props)} disabled= {isbuttondisbled}/>
     <PrimaryButton text="Cancel"  />
    
     </Stack> 
