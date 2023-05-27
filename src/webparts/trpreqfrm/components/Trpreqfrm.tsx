@@ -19,7 +19,7 @@ import "@pnp/sp/site-users/web";
 import "@pnp/sp/items";
 import { TextField } from '@fluentui/react/lib/TextField';
 import { PrimaryButton } from '@fluentui/react';
-import { IStyleFunctionOrObject, ITextFieldStyleProps, ITextFieldStyles, IconButton, Label, MessageBar, MessageBarType, Stack, getId } from 'office-ui-fabric-react';
+import { IStyleFunctionOrObject, ITextFieldStyleProps, ITextFieldStyles, Label, MessageBar, MessageBarType, Stack, getId } from 'office-ui-fabric-react';
 import { ListItemPicker} from '@pnp/spfx-controls-react';
 import * as ReactDOM from 'react-dom';
 import "@pnp/sp/folders";
@@ -888,7 +888,7 @@ handleTagChange = (selectedTags: any) => {
    
    
         <div>
-          <h3 className={styles.heading}>Outline of the Agreement</h3>
+          <p className={styles.heading}>Outline of the Agreement</p>
           <div>
     </div>
         <PeoplePicker
@@ -1027,7 +1027,7 @@ handleTagChange = (selectedTags: any) => {
 
       </div>
       <div>
-      <br /><p className={styles.formlabel}>Additional Information</p> <br />
+      <br /><p className={styles.heading}>Additional Information</p> <br />
       {/* <RichText label="Background" value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)}/> */}
       <p className={styles.formlabel}>Background</p>
       <ReactQuill theme='snow'
@@ -1035,7 +1035,7 @@ handleTagChange = (selectedTags: any) => {
       formats={formconst.formats}    
       value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)} 
    ></ReactQuill> 
-      <br />
+      
        
       <div id = "background" className="mt-5 text-center">
         <label htmlFor="bgattachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
@@ -1066,7 +1066,7 @@ handleTagChange = (selectedTags: any) => {
       value={this.state.voyage}  onChange={(text)=>this.onvoyageTextChange(text)}  
         
    ></ReactQuill> 
-      <br />
+      
    
        
       <div className="mt-5 text-center">
@@ -1097,7 +1097,7 @@ handleTagChange = (selectedTags: any) => {
       value={this.state.addothers}  onChange={(text)=>this.onaddothersTextChange(text)}
         
    ></ReactQuill> 
-    <br />
+    
     <div className="mt-5 text-center">
         <label htmlFor="othersattachment" className="btn btn-primary text-light" role="button" aria-disabled="false">
           + Add Supporting Documents
@@ -1118,7 +1118,7 @@ handleTagChange = (selectedTags: any) => {
           </span>
         </p>
       </div>
-   <br />
+   
  
       
     <PeoplePicker
@@ -1135,7 +1135,7 @@ handleTagChange = (selectedTags: any) => {
         principalTypes={[PrincipalType.User]}
         resolveDelay={1000} />                  
     <br/>
-    <div className={styles.extpartiesstackContainer }>
+    <Stack horizontal verticalAlign="end" className={styles.extpartiesstackContainer }>
           <TextField
             label="Interested Parties (External)"
             value={this.state.newParty}
@@ -1148,9 +1148,9 @@ handleTagChange = (selectedTags: any) => {
               return '';
             }} */
           />
-{/*           <PrimaryButton text="+" onClick={this.handleAddParty} />
- */}          <IconButton onClick= { this.handleAddParty } iconProps={ { iconName: 'Add' } } title='Add Party' />
-        </div>
+          <PrimaryButton text="+" onClick={this.handleAddParty} />
+          {/* <IconButton onClick= { this.handleAddParty } iconProps={ { iconName: 'Add' } } title='Add Party' /> */}
+        </Stack>
     
         <div>
           {interestedPartiesexternal.map((party: any, index: React.Key) => (
