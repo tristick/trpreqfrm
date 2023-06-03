@@ -26,7 +26,10 @@ import "@pnp/sp/folders";
 import * as formconst from "../../constant";
 import ReactQuill from 'react-quill';
 import 'react-quill/dist/quill.snow.css'; 
-import { getCustomerItems, getCustomerRef, getOfficeRef, submitDataAndGetId, updateData } from '../../../services/formservices';
+import { checklibFolderExistence, checklistFolderExistence, getCustomerItems, getCustomerRef, getOfficeRef, submitDataAndGetId, updateData } from '../../../services/formservices';
+import { isEmpty } from '@microsoft/sp-lodash-subset';
+//import { useNavigate } from 'react-router-dom';
+//import { isEmpty } from '@microsoft/sp-lodash-subset';
 
 
 
@@ -86,11 +89,20 @@ const textFieldStyles: Partial<ITextFieldStyles> = {
   let customerreference:string;
   let officereference:string;
   let isselectedApplicant:boolean = true ;
-  let isselectedCustomer:boolean = true ;
-  let isselectedOffice:boolean = true ;
+  //let isselectedCustomer:boolean = true ;
+  //let isselectedOffice:boolean = true ;
   let isemailInvalid:boolean = false;
+  let isvalidnumContractvolume : boolean = true;
+
+  //let isemptyContractvolume : boolean = false;
+  //let isemptybaf : boolean = false;
+  //let isemptyfreight : boolean = false;
   let isbuttondisbled : boolean = false;
-  let buttontext : string = "Submit"
+  let buttontext : string = "Submit";
+  //const navigate = useNavigate();
+  let listFolderpath:string;
+  let libfolderUrl:string;
+  let streamerror:boolean =false;
 
 
 export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqfrmState> {
@@ -127,7 +139,7 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       endDate:new Date(),
       dateduration:"0",
       cargodescription:"",
-      contractval:0,
+      contractval:"",
       iscontractvalValid: true,
       portpairs:"",
       freight:"",
@@ -151,12 +163,11 @@ export default class Trpreqfrm extends React.Component<ITrpreqfrmProps, ITrpreqf
       newParty: "",
       selectedTags: [],
       baf:"",
-      onload:true
+      onload:true,
+      allfieldsvalid:true,
+      listfolderExists: true,
+      libfolderExists : true
       
-     
-      
-     
-     
     }; 
     
   }
@@ -258,7 +269,7 @@ fetchCustomerItems = async () => {
  /*  public onDropdownChange = (event: React.FormEvent<HTMLDivElement>, item: IDropdownOption): void => {
     this.setState({ ValueDropdown: item.key as string});
   } */
-  private _oncustomerSelectedItem=(data: { key: string; name: string }[])=> {
+  private _oncustomerSelectedItem=async (data: { key: string; name: string }[])=> {
 
    if(data.length == 0){
     this.setState({customerlist:""})
@@ -269,14 +280,25 @@ fetchCustomerItems = async () => {
       customerreference = customerRef
       //console.log(customerRef);
       
-    })
+    });
+
+    listFolderpath = formconst.WEB_URL+"/Lists/"+ formconst.LISTNAME+"/" + data[0].name; 
+    //let relistFolderpath = formconst.LISTNAME+"/" + data[0].name; 
+    const listfolderExists = await checklistFolderExistence(this.props,listFolderpath);
+    
+   this.setState({ listfolderExists });
+    console.log("List",listfolderExists);
+    libfolderUrl = formconst.LIBRARYNAME +"/" + data[0].name;
+    const libfolderExists = await checklibFolderExistence(this.props,libfolderUrl);
+    this.setState({ libfolderExists });
+    console.log("Folder",libfolderExists);
    }
 
-     isselectedCustomer = data.length >0 ? true : false;
+     //isselectedCustomer = data.length >0 ? true : false;
   
   }
 
-
+  
 
   private _onofficeSelectedItem=(data: { key: string; name: string }[])=> {
     
@@ -292,7 +314,7 @@ fetchCustomerItems = async () => {
     })
     }
 
-   isselectedOffice = data.length > 0 ? true : false;
+   //isselectedOffice = data.length > 0 ? true : false;
     
 
   }
@@ -364,15 +386,18 @@ fetchCustomerItems = async () => {
  
   } 
   private _onccontractval=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
-    const isNumberValid: boolean = !isNaN(Number(newText));
-    this.setState({contractval:newText || '', iscontractvalValid: isNumberValid})
+    isvalidnumContractvolume = !isNaN(Number(newText))
+    //isemptyContractvolume = isEmpty(newText)
+    this.setState({contractval:newText || '', iscontractvalValid: isvalidnumContractvolume})
+    
  }
  private _onbaf=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
-
+  //isemptybaf=isEmpty(newText)
   this.setState({baf:newText})
 
 }
  private _onfreight=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
+   //isemptyfreight = isEmpty(newText)
   this.setState({freight:newText})
 }
 private _newparty=(ev: React.FormEvent<HTMLInputElement | HTMLTextAreaElement>, newText: string): void =>{ 
@@ -389,7 +414,7 @@ handleAddParty = () => {
   } else{
 
     isemailInvalid = true;
-    this.setState({newParty:""})
+    this.setState({newParty:"",allfieldsvalid:false})
 
   }
   //console.log(interestedPartiesexternal.toString())
@@ -550,65 +575,82 @@ handleAddParty = () => {
   };
     private _createItem  =async (props:ITrpreqfrmProps):Promise<void>=>{
 
+     // const _sp :SPFI = getSP(this.props.context ) ;
+     if(!isselectedApplicant || (this.state.customerlist).length == 0 || (this.state.ValueDropdown).length == 0 || isEmpty(this.state.freight)||
+     isEmpty(this.state.baf) || isEmpty(this.state.contractval) || !isvalidnumContractvolume ||isemailInvalid||!this.state.libfolderExists ||!this.state.listfolderExists)
+     {
+     this.setState({allfieldsvalid:false}) ; 
+     console.log(this.state.allfieldsvalid)
+    
+     return;
+     }else {
+      this.setState({allfieldsvalid:true}) ; 
       isbuttondisbled = true;
       buttontext = "Saving..."
+     }
+
      
-     // const _sp :SPFI = getSP(this.props.context ) ;
-      let folderUrl: string;
      
-      if (!isselectedApplicant) {
-        // Handle the validation error, e.g., display an error message
-      
+       /* if (!isselectedApplicant) {
         return;
       }
-
+  
       if ((this.state.customerlist).length == 0) {
         
         isselectedCustomer = false;
-       this.setState({customerlist:""})
-        //console.log(customerValidationMessage);
+        this.setState({customerlist:""})
         return;
       }
-
+  
       
       if ((this.state.ValueDropdown).length == 0) {
         
         isselectedOffice = false;
-       this.setState({ValueDropdown:""})
-        //console.log(customerValidationMessage);
-        return;
-      }
-
-      if (isemailInvalid) {
-        
-      
-        //console.log(customerValidationMessage);
-        return;
-      }
-
-      
-      /* const officeValidationMessage = this.validateOfficeField();
-      if (!officeValidationMessage) {
-        
-        console.log(officeValidationMessage);
+        this.setState({ValueDropdown:""})
         return;
       }
   
-      if (!this.state.iscontractvalValid) {
+      if ((this.state.contractval).length == 0 || this.state.iscontractvalValid ==false) {
+        
+        isvalidnumContractvolume = false;
+        this.setState({contractval:""})
         return;
       }
- */
+  
+      if ((this.state.baf).length == 0) {
+        
+        isemptybaf = true;
+        this.setState({baf:""})
+        return;
+      }
+  
+      if ((this.state.freight).length == 0) {
+        
+        isemptyfreight = true;
+        this.setState({baf:""})
+        return;
+      } */
+   
       
+   
+      let folderUrl: string;
 
-      let listFolderpath=formconst.WEB_URL+"/Lists/"+ formconst.LISTNAME+"/" +this.state.customerlist; 
+      //let listFolderpath=formconst.WEB_URL+"/Lists/"+ formconst.LISTNAME+"/" +this.state.customerlist; 
 
      // console.log(listFolderpath);
       //_sp.web.folders.addUsingPath(folderUrl);
       
       const data = {
         Title: 'New Item creation in process',
-     
-      };
+        CargoDescription: this.state.cargodescription,
+        PortPairsEstVolFreightRate: this.state.portpairs,
+        OtherConditions: this.state.othercon,
+        ApplicableLaw: this.state.applaw,
+        VoyagePLContribution: this.state.voyage,
+        Background: this.state.background,
+        Others: this.state.addothers,
+      
+     };
       submitDataAndGetId(this.props,data,listFolderpath).then(async (itemId: any) => {
         listId = itemId   
         console.log(`Item created with ID: ${itemId}`);
@@ -640,7 +682,7 @@ handleAddParty = () => {
     
       
     //folderUrl =formconst.LIBRARYNAME + "/" + lastitemid    
-    folderUrl = formconst.LIBRARYNAME +"/" + this.state.customerlist + "/" + lastitemid
+   folderUrl = libfolderUrl + "/" + lastitemid
     this.setState({title:lastitemid})
     
         
@@ -657,15 +699,15 @@ handleAddParty = () => {
       ContractPeriodStart: this.state.startDate,
       ContractPeriodEnd: this.state.endDate,
       ContractDuration: this.state.dateduration,
-      CargoDescription: this.state.cargodescription,
+      //CargoDescription: this.state.cargodescription,
       ContractVolumePerYear: this.state.contractval,
-      PortPairsEstVolFreightRate: this.state.portpairs,
+     // PortPairsEstVolFreightRate: this.state.portpairs,
       FreightPayment: this.state.freight,
-      OtherConditions: this.state.othercon,
-      ApplicableLaw: this.state.applaw,
-      VoyagePLContribution: this.state.voyage,
-      Background: this.state.background,
-      Others: this.state.addothers,
+      //OtherConditions: this.state.othercon,
+      //ApplicableLaw: this.state.applaw,
+      //VoyagePLContribution: this.state.voyage,
+      //Background: this.state.background,
+      //Others: this.state.addothers,
       InterestedPartiesId: this.state.users,
       BackgroundSupportingDocuments: this.state.bgdocuments,
       VoyagePLContributionSupportingDo:this.state.vdocuments,
@@ -693,7 +735,7 @@ handleAddParty = () => {
     endDate:new Date(),
     dateduration:"0",
     cargodescription:"",
-    contractval:0,
+    contractval:"",
     iscontractvalValid: true,
     portpairs:"",
     freight:"",
@@ -712,10 +754,24 @@ handleAddParty = () => {
     newParty:""
    
   }); }, 3000);
+  window.open(formconst.SUBMIT_REDIRECT,"_self")
   }) 
   .catch((error: any) => {
-    console.log('Error:', error);
+    
+    var obj = JSON.stringify(error);
+  
+    if(obj.indexOf("400") !== -1)
+    {    console.log("mATCH FOUND")
+          streamerror = true;
+         this.setState({allfieldsvalid:false}) 
+  }
+
+    else{
+
+    console.log('Error:', error);}
   });
+
+
 
  
 const upload = async () => {
@@ -755,7 +811,7 @@ const upload = async () => {
           console.error("Error uploading file:", err);
         }
       }
-      let convertedStr = bgfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
+      let convertedStr = bgfileurl.map(url => `<a href="${url.trim()}" target="_blank">${url.trim()}</a>`);
        strbgurl = convertedStr.toString();
         //console.log(strbgurl);
         this.setState({ bgdocuments: strbgurl });
@@ -787,7 +843,7 @@ const upload = async () => {
           console.error("Error uploading file:", err);
         }
       }
-      let vconvertedStr = vfileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
+      let vconvertedStr = vfileurl.map(url => `<a href="${url.trim()}" target="_blank">${url.trim()}</a>`);
      vstrbgurl = vconvertedStr.toString();
     //console.log(vstrbgurl);
     this.setState({ vdocuments: vstrbgurl });
@@ -824,7 +880,7 @@ const upload = async () => {
           console.error("Error uploading file:", err);
         }
       }
-      let oconvertedStr = ofileurl.map(url => `<a href="${url.trim()}">${url.trim()}</a>`);
+      let oconvertedStr = ofileurl.map(url => `<a href="${url.trim()}" target="_blank">${url.trim()}</a>`);
        ostrbgurl = oconvertedStr.toString();
       //console.log(ostrbgurl);
       this.setState({ odocuments: ostrbgurl });
@@ -858,45 +914,140 @@ handleTagChange = (selectedTags: any) => {
   this.setState({ selectedTags });
 };
 
+_resetrichtext = () =>{
+ 
+  this.setState({cargodescription:"", portpairs:"",othercon:"", applaw:"", voyage:"",background:"", addothers:"",allfieldsvalid:true})
+  streamerror = false;
+  isbuttondisbled = false;
+  buttontext = "Submit"
 
+}
+
+cancel =()=>{
+  //navigate(formconst.CANCEL_REDIRECT);
+  window.open(formconst.CANCEL_REDIRECT,"_self");
+}
   public render(): React.ReactElement<ITrpreqfrmProps> {
   
    
     let curruser:any = this.props.userDisplayName;
     const {interestedPartiesexternal } = this.state;
+    let successMessage : JSX.Element | null
+    let textFieldErrorMessage: JSX.Element | null 
+    let applicantFieldErrorMessage: JSX.Element | null 
+    let customerFieldErrorMessage: JSX.Element | null 
+    let OfficeFieldErrorMessage: JSX.Element | null
+    let volumeFieldErrorMessage: JSX.Element | null
+    let bafFieldErrorMessage: JSX.Element | null
+    let freightFieldErrorMessage: JSX.Element | null
+  
+    let EmailFieldErrorMessage: JSX.Element | null
+    let FormFieldErrorMessage: JSX.Element | null
+    let foldercustomerFieldErrorMessage: JSX.Element | null
+    let imageFieldErrorMessage: JSX.Element | null
 
 
-    const successMessage: JSX.Element | null = this.state.isSuccess ?
+    successMessage = this.state.isSuccess ?
     <MessageBar messageBarType={MessageBarType.success}>Request Id : {this.state.title} submitted successfully.</MessageBar>
     : null;
     
-    const textFieldErrorMessage: JSX.Element | null = !this.state.iscontractvalValid ?
+   /*  if(!this.state.allfieldsvalid){
+   
+    textFieldErrorMessage = !this.state.iscontractvalValid ?
       <MessageBar messageBarType={MessageBarType.error}>Please enter a valid number.</MessageBar>
       : null;
 
-      const applicantFieldErrorMessage: JSX.Element | null = !isselectedApplicant ?
+      applicantFieldErrorMessage = !isselectedApplicant ?
       <MessageBar messageBarType={MessageBarType.error}>Applicant field is required.</MessageBar>
       : null;
 
-      const customerFieldErrorMessage: JSX.Element | null = !isselectedCustomer ?
+      customerFieldErrorMessage = !isselectedCustomer ?
       <MessageBar messageBarType={MessageBarType.error}>Customer field is required.</MessageBar>
       : null;
 
-      const OfficeFieldErrorMessage: JSX.Element | null = !isselectedOffice ?
+      OfficeFieldErrorMessage = !isselectedOffice ?
       <MessageBar messageBarType={MessageBarType.error}>Office field is required.</MessageBar>
       : null;
 
-      const EmailFieldErrorMessage: JSX.Element | null = isemailInvalid ?
+      volumeFieldErrorMessage = isemptyContractvolume?
+      <MessageBar messageBarType={MessageBarType.error}>Contract Volume Per Year is required.</MessageBar>
+      : null;
+
+      bafFieldErrorMessage = isemptybaf?
+      <MessageBar messageBarType={MessageBarType.error}>BAF is required.</MessageBar>
+      : null;
+
+      freightFieldErrorMessage = isemptyfreight?
+      <MessageBar messageBarType={MessageBarType.error}>Freight is required.</MessageBar>
+      : null;
+
+
+      EmailFieldErrorMessage= isemailInvalid ?
       <MessageBar messageBarType={MessageBarType.error}>Please enter a valid email address.</MessageBar>
       : null;
+
+      FormFieldErrorMessage= 
+      <MessageBar messageBarType={MessageBarType.error}>Please fill all the required fields</MessageBar>
+      
+    } */
+
+    if(!this.state.allfieldsvalid){
+   
+      textFieldErrorMessage = !this.state.iscontractvalValid ?
+        <MessageBar messageBarType={MessageBarType.error}>Please enter a valid number.</MessageBar>
+        : null;
+  
+        applicantFieldErrorMessage = !isselectedApplicant ?
+        <MessageBar messageBarType={MessageBarType.error}>Applicant is required.</MessageBar>
+        : null;
+  
+        customerFieldErrorMessage = (this.state.customerlist).length == 0 ?
+        <MessageBar messageBarType={MessageBarType.error}>Customer is required.</MessageBar>
+        : null;
+
+        foldercustomerFieldErrorMessage = (!this.state.libfolderExists || !this.state.listfolderExists) ?
+        <MessageBar messageBarType={MessageBarType.error}>Kindly contact ypur IT Iteam. Folder do not exist.</MessageBar>
+        : null;
+  
+        OfficeFieldErrorMessage = (this.state.ValueDropdown).length == 0  ?
+        <MessageBar messageBarType={MessageBarType.error}>Requesting Office is required.</MessageBar>
+        : null;
+  
+        volumeFieldErrorMessage = (this.state.contractval).length == 0 ?
+        <MessageBar messageBarType={MessageBarType.error}>Contract Volume Per Year is required.</MessageBar>
+        : null;
+  
+        bafFieldErrorMessage = isEmpty(this.state.baf) ?
+        <MessageBar messageBarType={MessageBarType.error}>BAF is required.</MessageBar>
+        : null;
+  
+        freightFieldErrorMessage = isEmpty(this.state.freight) ?
+        <MessageBar messageBarType={MessageBarType.error}>Freight is required.</MessageBar>
+        : null;
+  
+  
+        EmailFieldErrorMessage= isemailInvalid ?
+        <MessageBar messageBarType={MessageBarType.error}>Please enter a valid email address.</MessageBar>
+        : null;
+
+       /* imageFieldErrorMessage= 
+        <MessageBar messageBarType={MessageBarType.error}>Stream size exceeds the allowed limit. Note the image size should be less than 80 KB</MessageBar> */
+        
+        imageFieldErrorMessage = streamerror ? <MessageBar messageBarType={MessageBarType.blocked} isMultiline={false} onDismiss={this._resetrichtext} dismissButtonAriaLabel="Close"
+        truncated={true} overflowButtonAriaLabel="See more">Stream size exceeds the allowed limit. Note that the image size in the rich text field should be less than 80 KB .
+        On closing the dialog will reset the rich text field values </MessageBar>: null;
+        
+        FormFieldErrorMessage= 
+        <MessageBar messageBarType={MessageBarType.error}>Please provide all required information and submit the form.</MessageBar>
+        
+      }
     return (
     
     <section>
-   
-   
         <div>
           <p className={styles.heading}>Outline of the Agreement</p>
           <div>
+          <p><span className={styles.required}><b>*</b></span> Required.</p>
     </div>
         <PeoplePicker
             context={this.props.context as any}
@@ -929,22 +1080,7 @@ handleTagChange = (selectedTags: any) => {
           onChange={this.handleTagChange}
         />
       */}
-      <p className={styles.formlabel}>Customer<span className={styles.required}> *</span></p>
-      <ListItemPicker listId={formconst.CUSTOMER_LIST_ID}
-       context={this.props.context as any}
-          columnInternalName='Title'
-          keyColumnInternalName='Id'
-          placeholder="Select your customer"
-          substringSearch={true}
-          //label="Customer *"
-          orderBy={"Id desc"}
-          
-          itemLimit={1}
-          enableDefaultSuggestions={true}
-          onSelectedItem={this._oncustomerSelectedItem}
-          noResultsFoundText="No Country Found"
-          defaultSelectedItems = {[]}
-                     />{customerFieldErrorMessage}
+      
     <p className={styles.formlabel}>Requesting Office<span className={styles.required}> *</span></p>
     <ListItemPicker listId={formconst.REPORTING_OFFICE_LIST_ID}
        context={this.props.context as any}
@@ -961,11 +1097,31 @@ handleTagChange = (selectedTags: any) => {
           defaultSelectedItems = {[]}
          
                      />{OfficeFieldErrorMessage}
+                     <p className={styles.formlabel}>Customer<span className={styles.required}> *</span></p>
+      <ListItemPicker listId={formconst.CUSTOMER_LIST_ID}
+       context={this.props.context as any}
+          columnInternalName='Title'
+          keyColumnInternalName='Id'
+          placeholder="Select your customer"
+          substringSearch={true}
+          //label="Customer *"
+          orderBy={"Id desc"}
+          
+          itemLimit={1}
+          enableDefaultSuggestions={true}
+          onSelectedItem={this._oncustomerSelectedItem}
+          noResultsFoundText="No Country Found"
+          defaultSelectedItems = {[]}
+                     />{customerFieldErrorMessage}{foldercustomerFieldErrorMessage}
    
       <div>
+        <table>
+          <tr ><td className={styles.tabltr}>
+      <p className={styles.formlabel}>Contract Period From<span className={styles.required}> *</span></p>  
+      
       <DateTimePicker 
     
-      label="Contract From"
+      //label="Contract From"
       maxDate={this.state.endDate}
             dateConvention={DateConvention.Date}
             value={this.state.startDate}  
@@ -974,15 +1130,23 @@ handleTagChange = (selectedTags: any) => {
             showLabels = {false}
           
             />
-                
-           
-    <DateTimePicker label="Contract To"
+        
+        </td>
+        <td width={'100px;'}></td>
+        <td className={styles.tabltr}>        
+     <p className={styles.formlabel}>Contract Period To<span className={styles.required}> *</span></p>  
+        
+    <DateTimePicker 
+    //label="Contract To"
     minDate={this.state.startDate}
           dateConvention={DateConvention.Date}
           value={this.state.endDate}  
           onChange={this._onchangedEndDate}
           allowTextInput = {false}  
           showLabels = {false}/>
+          </td>
+          </tr>
+      </table>
     </div>  
 
       {/* <TextField label="Contract Duration" value={this.state.dateduration} onChange={this._onchangedduration}/> */}
@@ -998,7 +1162,11 @@ handleTagChange = (selectedTags: any) => {
       value={this.state.cargodescription}  onChange={(text)=>this.oncargodescTextChange(text)}  
         
    ></ReactQuill> 
-      <TextField label="Contract Volume Per Year" value={this.state.contractval} onChange={this._onccontractval} errorMessage={textFieldErrorMessage?.props.messageBarType === MessageBarType.error ? textFieldErrorMessage.props.children : undefined} /> 
+    <p className={styles.formlabel}>Contract Volume Per Year<span className={styles.required}> *</span></p> 
+      <TextField 
+      //label="Contract Volume Per Year" 
+      value={this.state.contractval} onChange={this._onccontractval} errorMessage={textFieldErrorMessage?.props.messageBarType === MessageBarType.error ? textFieldErrorMessage.props.children : undefined} />
+      {volumeFieldErrorMessage}  
      
       {/* <RichText label="Port Pairs, Estimate Volume & Freight Rate" value={this.state.portpairs}  onChange={(text)=>this.onportpairsTextChange(text)}/>  */}
       <p className={styles.formlabel}>Port Pairs, Estimate Volume & Freight Rate</p>
@@ -1008,8 +1176,17 @@ handleTagChange = (selectedTags: any) => {
       value={this.state.portpairs}  onChange={(text)=>this.onportpairsTextChange(text)} 
         
    ></ReactQuill> 
-    <TextField label="BAF" value={this.state.baf} onChange={this._onbaf}/>
-      <TextField label="Freight Payment" value={this.state.freight} onChange={this._onfreight}/>
+    <p className={styles.formlabel}>BAF<span className={styles.required}> *</span></p>  
+
+    <TextField 
+    //label="BAF" 
+    value={this.state.baf} onChange={this._onbaf}/>{bafFieldErrorMessage}
+
+      <p className={styles.formlabel}>Freight Payment<span className={styles.required}> *</span></p>  
+
+      <TextField 
+      //label="Freight Payment" 
+      value={this.state.freight} onChange={this._onfreight}/> {freightFieldErrorMessage}
 {/*       <RichText label="Other Conditions" value={this.state.othercon}  onChange={(text)=>this.ontherconTextChange(text)}/>
  
  */}     
@@ -1034,7 +1211,7 @@ handleTagChange = (selectedTags: any) => {
 
       </div>
       <div>
-      <br /><p className={styles.heading}>Additional Information</p> <br />
+      <br /><p className={styles.heading}>Additional Information</p>
       {/* <RichText label="Background" value={this.state.background}  onChange={(text)=>this.onBackgroundTextChange(text)}/> */}
       <p className={styles.formlabel}>Background</p>
       <ReactQuill theme='snow'
@@ -1168,17 +1345,18 @@ handleTagChange = (selectedTags: any) => {
         {EmailFieldErrorMessage}
     <Stack horizontal horizontalAlign='end' className={styles.stackContainer}>     
     <PrimaryButton text={buttontext} onClick={() => this._createItem(this.props)} disabled= {isbuttondisbled}/>
-    <PrimaryButton text="Cancel"  />
+    <PrimaryButton text="Cancel"  onClick ={this.cancel}/>
    
     </Stack> 
-    
+    <br />
+    {imageFieldErrorMessage}
+    <br />
+    {FormFieldErrorMessage}
     {successMessage}
+    
         </div>
       </section>
     );
   }
 }
-
-
-
 

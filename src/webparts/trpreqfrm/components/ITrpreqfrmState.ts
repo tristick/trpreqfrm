@@ -40,7 +40,10 @@ export interface ITrpreqfrmState {
     newParty: string
     selectedTags: any[]
     baf:string
-    onload:boolean
+    onload:boolean,
+    allfieldsvalid:boolean,
+    listfolderExists: boolean;
+    libfolderExists: boolean
 
     
       

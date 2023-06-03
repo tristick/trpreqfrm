@@ -50,12 +50,21 @@ export const getCustomerItems= async (props:ITrpreqfrmProps):Promise<ICustomer[]
     const _sp :SPFI = getSP(props.context) ;
     _sp.web.folders.addUsingPath(listFolderpath);
     return _sp.web.lists.getByTitle(formconst.LISTNAME).addValidateUpdateItemUsingPath([
-      { FieldName: 'Title', FieldValue: data.Title }
-  ], listFolderpath)
+      { FieldName: 'Title', FieldValue: data.Title },
+      { FieldName: 'CargoDescription', FieldValue: data.CargoDescription },
+      { FieldName: 'PortPairsEstVolFreightRate', FieldValue: data.PortPairsEstVolFreightRate },
+      { FieldName: 'OtherConditions', FieldValue: data.OtherConditions },
+      { FieldName: 'ApplicableLaw', FieldValue: data.ApplicableLaw },
+      { FieldName: 'VoyagePLContribution', FieldValue: data.VoyagePLContribution },
+      { FieldName: 'Background', FieldValue: data.Background },
+      { FieldName: 'Others', FieldValue: data.Others }
+    ], listFolderpath)
       .then((response) => {
-        console.log("New Item",response[1].FieldValue)
+        console.log(response)
+        //console.log("New Item",response[8].FieldValue)
+      
           // Send item ID as a response to the promise
-          const itemId = response[1].FieldValue;
+          const itemId = response[8].FieldValue;
           console.log("ID",itemId)
           // Resolve the promise with the item ID
           return Promise.resolve(itemId);
@@ -68,19 +77,17 @@ export const getCustomerItems= async (props:ITrpreqfrmProps):Promise<ICustomer[]
     
   }
 
-  
-
-  
-  
-  
   export const updateData=(props:ITrpreqfrmProps ,itemId: number, data: any): Promise<void>=> {
     const _sp :SPFI = getSP(props.context) ;
     return new Promise<void>((resolve, reject) => {
       _sp.web.lists.getByTitle(formconst.LISTNAME).items.getById(itemId).update(data)
         .then(() => {
+          
+          //console.log(e.response.headers.get("content-length"))
           resolve();
         })
         .catch((error) => {
+   
           reject(error);
         });
     });
@@ -106,6 +113,29 @@ export const getCustomerItems= async (props:ITrpreqfrmProps):Promise<ICustomer[]
         });
     });
   }
+
+
+  export async function checklistFolderExistence(props:ITrpreqfrmProps,folderPath: string): Promise<boolean> {
+   
+    folderPath = folderPath.replace(formconst.BASE_URL, "");
+      const _sp :SPFI = getSP(props.context) ;
+      console.log(folderPath);
+      const listfolder = await  _sp.web.getFolderByServerRelativePath(folderPath).select('Exists')();
+      if(listfolder.Exists){
+      return true;
+      }else{return false;} // Folder exists
+    
+  }
+  export async function checklibFolderExistence(props:ITrpreqfrmProps,folderPath: string): Promise<boolean> {
+    folderPath = folderPath.replace(formconst.BASE_URL, "");
+    console.log(folderPath)
+    const _sp :SPFI = getSP(props.context) ;
+    const listfolder = await _sp.web.getFolderByServerRelativePath(folderPath).select('Exists')();
+    if(listfolder.Exists){
+    return true;
+    }else{return false;} // Folder exists
+  
+}
 
   
 
